@@ -135,6 +135,7 @@ const API_KEY_FIELDS: Array<{
   // Comms
   { section: "Communications",               key: "WHATSAPP_ADMIN_PHONE",  label: "WhatsApp Admin Phone",    placeholder: "+212600000000",                hint: "Format international" },
   { section: "Communications",               key: "RESEND_API_KEY",        label: "Resend API Key",          placeholder: "re_xxxxxxxxxxxx",              hint: "Pour l'envoi d'emails transactionnels" },
+  { section: "Communications",               key: "N8N_WEBHOOK_URL",       label: "n8n Webhook URL",         placeholder: "https://soukclick.app.n8n.cloud/webhook/...", hint: "Déclenché à chaque nouvelle commande" },
 ]
 
 function ApiKeysTab({ settings, onChange, onSave, saving }: {

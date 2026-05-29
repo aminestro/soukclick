@@ -2,6 +2,7 @@
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { sendAdminAlert } from "@/lib/whatsapp"
+import { triggerN8nWorkflow } from "@/lib/n8n"
 import { randomUUID } from "crypto"
 
 export const dynamic = 'force-dynamic'
@@ -285,6 +286,23 @@ export async function POST(req: NextRequest) {
   })
 
   // â”€â”€ WhatsApp admin alert (non-blocking, outside transaction) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  // -- n8n webhook (non-blocking) -----------------------------------------------
+  triggerN8nWorkflow("new-order", {
+    orderId:      order.id,
+    orderNumber,
+    phone:        data.phone,
+    customerName: data.customer_name,
+    address:      data.address,
+    city:         city.nameFr,
+    wilaya:       city.wilaya,
+    total,
+    productTitle: product.titleFr,
+    status:       "NOUVEAU",
+    isBlacklist:  isBlacklisted,
+    isDuplicate,
+    riskScore,
+  }).catch(() => {})
   sendAdminAlert({
     orderNumber,
     customerName: data.customer_name,
