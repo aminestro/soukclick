@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { ArrowLeft, Check } from "lucide-react"
+import { ArrowLeft, Check, Sparkles, Link2 } from "lucide-react"
 import Link from "next/link"
 import { generateSlug } from "@/lib/slug"
 
@@ -137,6 +137,28 @@ export default function NewLandingPage() {
         <span className="text-gray-300">/</span>
         <span className="text-sm font-semibold text-gray-900">Nouvelle</span>
       </div>
+
+      {/* AI URL shortcut */}
+      <Link
+        href="/admin/ai-tools/url-generator"
+        className="group flex items-center gap-4 rounded-2xl border-2 border-dashed border-orange-300 bg-orange-50/60 p-4 hover:border-orange-400 hover:bg-orange-50 transition-all"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500 shadow-sm">
+          <Link2 className="h-5 w-5 text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-extrabold text-orange-700 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" />
+            Vous avez une URL produit ?
+          </p>
+          <p className="text-xs text-orange-600 mt-0.5">
+            Générer automatiquement la fiche + landing page depuis AliExpress, Alibaba, Amazon…
+          </p>
+        </div>
+        <span className="text-xs font-bold text-orange-500 group-hover:text-orange-600 whitespace-nowrap">
+          Générer →
+        </span>
+      </Link>
 
       <h1 className="text-xl font-extrabold text-gray-900">Créer une landing page</h1>
 

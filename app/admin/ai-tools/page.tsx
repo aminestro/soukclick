@@ -4,8 +4,9 @@ import { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
 import {
   Sparkles, Loader2, Copy, Check, Save,
-  Wand2, FileText, Video, Search, HelpCircle,
+  Wand2, FileText, Video, Search, HelpCircle, Link2, ChevronRight,
 } from "lucide-react"
+import Link from "next/link"
 import { AIResultCard } from "@/components/admin/ai/AIResultCard"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -779,6 +780,30 @@ export default function AIToolsPage() {
           <p className="text-xs text-gray-500">Générez du contenu optimisé pour le marché marocain COD</p>
         </div>
       </div>
+
+      {/* ── URL Generator CTA ── Primary feature */}
+      <Link
+        href="/admin/ai-tools/url-generator"
+        className="group flex items-center gap-4 rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-orange-500 to-pink-500 p-5 shadow-md hover:shadow-lg transition-all hover:scale-[1.01]"
+      >
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+          <Link2 className="h-7 w-7 text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="text-lg font-extrabold text-white leading-tight">
+            🔗 Générer depuis une URL
+          </p>
+          <p className="text-sm text-orange-100 mt-0.5">
+            Collez n'importe quelle URL produit — l'IA crée la fiche + landing page complète en 30 secondes
+          </p>
+          <p className="mt-1.5 text-xs text-orange-200">
+            AliExpress · Alibaba · 1688 · Amazon · Shopify · et plus
+          </p>
+        </div>
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20 group-hover:bg-white/30 transition">
+          <ChevronRight className="h-5 w-5 text-white" />
+        </div>
+      </Link>
 
       {/* Tab bar */}
       <div className="flex gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-gray-100 p-1">

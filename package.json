@@ -25,6 +25,7 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^3.9.1",
+    "@mendable/firecrawl-js": "^4.25.1",
     "@prisma/client": "^5.22.0",
     "@tanstack/react-query": "^5.62.16",
     "@tanstack/react-table": "^8.20.5",
