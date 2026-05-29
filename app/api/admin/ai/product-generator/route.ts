@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
-import { openai, MODEL } from "@/lib/openai"
+import { getOpenAIClient, MODEL } from "@/lib/openai"
 
 export const dynamic = 'force-dynamic'
 
@@ -97,7 +97,7 @@ Rules:
 Return only the JSON object, no markdown.`
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await (await getOpenAIClient()).chat.completions.create({
       model:       MODEL,
       messages:    [{ role: "user", content: prompt }],
       temperature: 0.7,
