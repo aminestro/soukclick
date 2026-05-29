@@ -1,14 +1,16 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@prisma/client"
 
-// ─── GET ──────────────────────────────────────────────────────────────────────
+export const dynamic = 'force-dynamic'
+
+// â”€â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function GET(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   const sp         = req.nextUrl.searchParams
   const unreadOnly = sp.get("unreadOnly") === "true"
@@ -41,7 +43,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ notifications, total, unreadCount, page })
 }
 
-// ─── PATCH — mark as read ─────────────────────────────────────────────────────
+// â”€â”€â”€ PATCH â€” mark as read â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const patchSchema = z.object({
   ids:    z.array(z.string()).optional(), // specific IDs to mark read
@@ -50,7 +52,7 @@ const patchSchema = z.object({
 
 export async function PATCH(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   let raw: unknown
   try { raw = await req.json() } catch {
@@ -58,7 +60,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const parsed = patchSchema.safeParse(raw)
-  if (!parsed.success) return NextResponse.json({ error: "Données invalides" }, { status: 422 })
+  if (!parsed.success) return NextResponse.json({ error: "DonnÃ©es invalides" }, { status: 422 })
 
   const { ids, markAll } = parsed.data
 

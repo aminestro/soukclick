@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { getAdminSession } from "@/lib/auth"
 import { uploadToR2, buildKey } from "@/lib/r2"
 import sharp from "sharp"
 import { randomUUID } from "crypto"
+
+export const dynamic = 'force-dynamic'
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/webm"])
@@ -14,7 +16,7 @@ const VALID_FOLDERS = new Set(["products", "creatives", "reviews"])
 
 export async function POST(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   let formData: FormData
   try {
@@ -40,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   if (!isImage && !isVideo) {
     return NextResponse.json(
-      { error: "Type de fichier non supporté. Accepté : JPEG, PNG, WebP, MP4." },
+      { error: "Type de fichier non supportÃ©. AcceptÃ© : JPEG, PNG, WebP, MP4." },
       { status: 422 },
     )
   }
@@ -73,7 +75,7 @@ export async function POST(req: NextRequest) {
     contentType = "image/webp"
     extension   = "webp"
   } else {
-    // Video — pass through unchanged
+    // Video â€” pass through unchanged
     finalBuffer = rawBuffer
     contentType = mimeType
     extension   = mimeType === "video/webm" ? "webm" : "mp4"

@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+
+export const dynamic = 'force-dynamic'
 
 const querySchema = z.object({
   productId: z.string().cuid().optional(),
@@ -11,14 +13,14 @@ const querySchema = z.object({
 
 export async function GET(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   const parsed = querySchema.safeParse(Object.fromEntries(req.nextUrl.searchParams))
-  if (!parsed.success) return NextResponse.json({ error: "Paramètres invalides" }, { status: 422 })
+  if (!parsed.success) return NextResponse.json({ error: "ParamÃ¨tres invalides" }, { status: 422 })
 
   const { productId, startDate, endDate } = parsed.data
 
-  // ── Date range ────────────────────────────────────────────────────────────
+  // â”€â”€ Date range â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const now   = new Date()
   const start = startDate ? new Date(startDate + "T00:00:00Z") : new Date(now.getFullYear(), now.getMonth(), 1)
   const end   = endDate   ? new Date(endDate   + "T23:59:59Z") : now
@@ -27,14 +29,14 @@ export async function GET(req: NextRequest) {
 
   const productWhere = productId ? { productId } : {}
 
-  // ── Parallel queries ──────────────────────────────────────────────────────
+  // â”€â”€ Parallel queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [
     livreCounts,
     confirmedCount,
     adSpendAgg,
     products,
   ] = await Promise.all([
-    // LIVRE orders — revenue + delivery cost
+    // LIVRE orders â€” revenue + delivery cost
     prisma.order.aggregate({
       where: { ...productWhere, status: "LIVRE", createdAt: dateFilter },
       _sum:  { total: true, deliveryPrice: true, quantity: true },
@@ -59,7 +61,7 @@ export async function GET(req: NextRequest) {
     }),
   ])
 
-  // ── Per-product cost lookup ───────────────────────────────────────────────
+  // â”€â”€ Per-product cost lookup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const costMap = new Map(products.map((p) => [p.id, p.costPrice]))
 
   // Product cost from LIVRE orders (need order-level data)
@@ -73,7 +75,7 @@ export async function GET(req: NextRequest) {
     return sum + cost * o.quantity
   }, 0)
 
-  // ── Totals ────────────────────────────────────────────────────────────────
+  // â”€â”€ Totals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const revenue      = livreCounts._sum.total         ?? 0
   const deliveryCost = livreCounts._sum.deliveryPrice  ?? 0
   const adSpend      = adSpendAgg._sum.spend           ?? 0
@@ -89,7 +91,7 @@ export async function GET(req: NextRequest) {
     ? (revenue - totalCost - deliveryCost) / deliveredCount
     : null
 
-  // ── Daily breakdown ───────────────────────────────────────────────────────
+  // â”€â”€ Daily breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   type DayRow = {
     day: Date
     revenue: bigint

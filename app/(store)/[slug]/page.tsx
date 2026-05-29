@@ -1,4 +1,4 @@
-import { Metadata } from "next"
+﻿import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { ProductStatus } from "@prisma/client"
@@ -6,6 +6,8 @@ import { PixelInit } from "@/components/store/PixelInit"
 import { SectionRenderer } from "@/components/store/SectionRenderer"
 import { OrderForm } from "@/components/store/OrderForm"
 import type { LandingSection } from "@/types/landing"
+
+export const dynamic = 'force-dynamic'
 
 interface PageProps {
   params: { slug: string }

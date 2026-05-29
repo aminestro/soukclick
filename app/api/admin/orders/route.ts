@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@prisma/client"
+
+export const dynamic = 'force-dynamic'
 
 const querySchema = z.object({
   search:    z.string().optional(),
@@ -18,12 +20,12 @@ const querySchema = z.object({
 
 export async function GET(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   const params  = Object.fromEntries(req.nextUrl.searchParams)
   const parsed  = querySchema.safeParse(params)
   if (!parsed.success) {
-    return NextResponse.json({ error: "Paramètres invalides" }, { status: 422 })
+    return NextResponse.json({ error: "ParamÃ¨tres invalides" }, { status: 422 })
   }
 
   const { search, status, cityId, risk, dateFrom, dateTo, page, pageSize, export: exportCsv } = parsed.data
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
   if (risk === "medium") { where.riskScore = { gt: 40, lte: 70 } }
   if (risk === "high")   { where.riskScore = { gt: 70 } }
 
-  // CSV export — return all matching rows (no pagination)
+  // CSV export â€” return all matching rows (no pagination)
   if (exportCsv === "csv") {
     const all = await prisma.order.findMany({
       where,
@@ -61,7 +63,7 @@ export async function GET(req: NextRequest) {
     })
 
     const header = [
-      "Numéro","Date","Client","Téléphone","Produit","Qté","Total (MAD)",
+      "NumÃ©ro","Date","Client","TÃ©lÃ©phone","Produit","QtÃ©","Total (MAD)",
       "Ville","Wilaya","Statut","Score risque","Doublon","Blacklist",
       "UTM Source","UTM Campaign","FBCLID",
     ].join(",")

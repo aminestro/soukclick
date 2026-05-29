@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import type { OrderStatus } from "@prisma/client"
+
+export const dynamic = 'force-dynamic'
 
 // ─── GET /api/admin/orders/[id] ───────────────────────────────────────────────
 

@@ -1,17 +1,19 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   const today      = new Date()
   today.setHours(0, 0, 0, 0)
   const tomorrow   = new Date(today.getTime() + 86_400_000)
   const thirtyAgo  = new Date(Date.now() - 30 * 86_400_000)
 
-  // ── Pending orders + stats in parallel ────────────────────────────────────
+  // â”€â”€ Pending orders + stats in parallel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [
     orders,
     confirmedToday,
@@ -41,7 +43,7 @@ export async function GET() {
     }),
   ])
 
-  // ── Enrich each order with duplicate + customer history ───────────────────
+  // â”€â”€ Enrich each order with duplicate + customer history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const phones = [...new Set(orders.map((o) => o.phone))]
 
   // Count of orders per phone in last 30 days (all orders, not just pending)

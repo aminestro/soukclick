@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { sendCAPIEvent } from "@/lib/meta-capi"
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(
   req: NextRequest,

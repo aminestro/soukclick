@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+
+export const dynamic = 'force-dynamic'
 
 const patchSchema = z.object({
   spend:       z.number().int().min(0).optional(),

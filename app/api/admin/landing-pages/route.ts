@@ -1,18 +1,20 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateSlug, ensureUniqueSlug } from "@/lib/slug"
 import type { LandingSection } from "@/types/landing"
 
-// ─── Default sections per template ───────────────────────────────────────────
+export const dynamic = 'force-dynamic'
+
+// â”€â”€â”€ Default sections per template â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function makeHero(): LandingSection {
   return {
     type: "hero", enabled: true, order: 1,
     data: {
       headline: "Le produit qui change tout",
-      subheadline: "Livraison rapide partout au Maroc — Paiement à la livraison",
+      subheadline: "Livraison rapide partout au Maroc â€” Paiement Ã  la livraison",
       image_url: null, video_url: null,
       cta_text: "Commander Maintenant", cta_color: "#f97316",
       show_price: true, show_compare_price: true,
@@ -26,9 +28,9 @@ function makeBenefits(order: number): LandingSection {
     data: {
       title: "Pourquoi choisir ce produit ?",
       items: [
-        { icon: "⚡", title: "Rapide",    description: "Résultats visibles dès la première utilisation." },
-        { icon: "✅", title: "Fiable",    description: "Testé et approuvé par des milliers de clients." },
-        { icon: "🚚", title: "Livraison", description: "Partout au Maroc en 24–72h." },
+        { icon: "âš¡", title: "Rapide",    description: "RÃ©sultats visibles dÃ¨s la premiÃ¨re utilisation." },
+        { icon: "âœ…", title: "Fiable",    description: "TestÃ© et approuvÃ© par des milliers de clients." },
+        { icon: "ðŸšš", title: "Livraison", description: "Partout au Maroc en 24â€“72h." },
       ],
     },
   }
@@ -37,10 +39,10 @@ function makeFeatures(order: number): LandingSection {
   return {
     type: "features", enabled: true, order,
     data: {
-      title: "Caractéristiques",
+      title: "CaractÃ©ristiques",
       items: [
-        { image_url: null, title: "Qualité premium", description: "Fabriqué avec les meilleurs matériaux." },
-        { image_url: null, title: "Facile à utiliser", description: "Aucune installation requise." },
+        { image_url: null, title: "QualitÃ© premium", description: "FabriquÃ© avec les meilleurs matÃ©riaux." },
+        { image_url: null, title: "Facile Ã  utiliser", description: "Aucune installation requise." },
       ],
     },
   }
@@ -48,7 +50,7 @@ function makeFeatures(order: number): LandingSection {
 function makeVideo(order: number): LandingSection {
   return {
     type: "video", enabled: true, order,
-    data: { url: "", thumbnail_url: null, caption: "Regardez comment ça marche" },
+    data: { url: "", thumbnail_url: null, caption: "Regardez comment Ã§a marche" },
   }
 }
 function makeReviews(order: number): LandingSection {
@@ -61,11 +63,11 @@ function makeFAQ(order: number): LandingSection {
   return {
     type: "faq", enabled: true, order,
     data: {
-      title: "Questions fréquentes",
+      title: "Questions frÃ©quentes",
       items: [
-        { question: "Comment passer une commande ?",        answer: "Remplissez le formulaire et notre équipe vous contacte sous 24h." },
-        { question: "Quels sont les délais de livraison ?", answer: "1 à 5 jours selon votre ville." },
-        { question: "Comment fonctionne le paiement ?",     answer: "Vous payez uniquement à la réception de votre commande." },
+        { question: "Comment passer une commande ?",        answer: "Remplissez le formulaire et notre Ã©quipe vous contacte sous 24h." },
+        { question: "Quels sont les dÃ©lais de livraison ?", answer: "1 Ã  5 jours selon votre ville." },
+        { question: "Comment fonctionne le paiement ?",     answer: "Vous payez uniquement Ã  la rÃ©ception de votre commande." },
       ],
     },
   }
@@ -74,16 +76,16 @@ function makeCTA(order: number): LandingSection {
   return {
     type: "cta", enabled: true, order,
     data: {
-      headline: "Commandez maintenant — Stock limité !",
+      headline: "Commandez maintenant â€” Stock limitÃ© !",
       cta_text: "Je Commande", cta_color: "#f97316",
-      urgency_text: "⚠️ Offre limitée — livraison gratuite aujourd'hui seulement",
+      urgency_text: "âš ï¸ Offre limitÃ©e â€” livraison gratuite aujourd'hui seulement",
     },
   }
 }
 function makeBeforeAfter(order: number): LandingSection {
   return {
     type: "before_after", enabled: true, order,
-    data: { before_image: "", after_image: "", caption: "Résultats avant / après" },
+    data: { before_image: "", after_image: "", caption: "RÃ©sultats avant / aprÃ¨s" },
   }
 }
 
@@ -105,11 +107,11 @@ const TEMPLATE_SECTIONS: Record<string, LandingSection[]> = {
   ],
 }
 
-// ─── GET ──────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function GET(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   const sp        = req.nextUrl.searchParams
   const productId = sp.get("productId") ?? undefined
@@ -161,7 +163,7 @@ export async function GET(req: NextRequest) {
   )
 }
 
-// ─── Zod schema ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Zod schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const createSchema = z.object({
   productId: z.string().cuid("Produit invalide"),
@@ -171,11 +173,11 @@ const createSchema = z.object({
   metaDesc:  z.string().max(320).optional().nullable(),
 })
 
-// ─── POST ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   let raw: unknown
   try { raw = await req.json() } catch {

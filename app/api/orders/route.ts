@@ -1,10 +1,12 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { sendAdminAlert } from "@/lib/whatsapp"
 import { randomUUID } from "crypto"
 
-// ─── Rate limiting (in-memory, no Redis) ──────────────────────────────────────
+export const dynamic = 'force-dynamic'
+
+// â”€â”€â”€ Rate limiting (in-memory, no Redis) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ipHits = new Map<string, { count: number; resetAt: number }>()
 
@@ -22,20 +24,20 @@ function isRateLimited(ip: string): boolean {
   return entry.count > max
 }
 
-// ─── Zod schema ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Zod schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const orderBodySchema = z.object({
   customer_name:   z.string().min(2).max(100),
   phone: z
     .string()
-    .regex(/^(06|07)\d{8}$/, "Format téléphone invalide"),
+    .regex(/^(06|07)\d{8}$/, "Format tÃ©lÃ©phone invalide"),
   city_id:         z.string().cuid("Ville invalide"),
   address:         z.string().min(5).max(500),
   quantity:        z.number().int().min(1).max(10),
   product_id:      z.string().cuid("Produit invalide"),
   landing_page_id: z.string().cuid().optional().nullable(),
 
-  // UTM + click IDs — all optional
+  // UTM + click IDs â€” all optional
   utm_source:   z.string().max(200).optional().nullable(),
   utm_medium:   z.string().max(200).optional().nullable(),
   utm_campaign: z.string().max(200).optional().nullable(),
@@ -46,7 +48,7 @@ const orderBodySchema = z.object({
   gclid:        z.string().max(500).optional().nullable(),
 })
 
-// ─── Order number generator ───────────────────────────────────────────────────
+// â”€â”€â”€ Order number generator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function generateOrderNumber(): Promise<string> {
   const digits = Math.floor(100000 + Math.random() * 900000).toString()
@@ -57,7 +59,7 @@ async function generateOrderNumber(): Promise<string> {
   return exists ? generateOrderNumber() : num
 }
 
-// ─── Risk score ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Risk score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function computeRiskScore(opts: {
   isDuplicate:   boolean
@@ -73,14 +75,14 @@ function computeRiskScore(opts: {
   return Math.min(score, 100)
 }
 
-// ─── POST /api/orders ─────────────────────────────────────────────────────────
+// â”€â”€â”€ POST /api/orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(req: NextRequest) {
   // Rate limit
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown"
   if (isRateLimited(ip)) {
     return NextResponse.json(
-      { error: "Trop de tentatives. Veuillez réessayer dans quelques minutes." },
+      { error: "Trop de tentatives. Veuillez rÃ©essayer dans quelques minutes." },
       { status: 429 },
     )
   }
@@ -90,14 +92,14 @@ export async function POST(req: NextRequest) {
   try {
     raw = await req.json()
   } catch {
-    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 })
+    return NextResponse.json({ error: "Corps de requÃªte invalide." }, { status: 400 })
   }
 
   const parsed = orderBodySchema.safeParse(raw)
   if (!parsed.success) {
     const firstError = parsed.error.errors[0]
     return NextResponse.json(
-      { error: firstError?.message ?? "Données invalides." },
+      { error: firstError?.message ?? "DonnÃ©es invalides." },
       { status: 422 },
     )
   }
@@ -124,19 +126,19 @@ export async function POST(req: NextRequest) {
   }
   if (product.stock < data.quantity) {
     return NextResponse.json(
-      { error: "Stock insuffisant. Réduisez la quantité." },
+      { error: "Stock insuffisant. RÃ©duisez la quantitÃ©." },
       { status: 422 },
     )
   }
 
-  // ── Blacklist check ────────────────────────────────────────────────────────
+  // â”€â”€ Blacklist check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const existingCustomer = await prisma.customer.findUnique({
     where:  { phone: data.phone },
     select: { isBlacklisted: true, blacklistReason: true },
   })
   const isBlacklisted = existingCustomer?.isBlacklisted ?? false
 
-  // ── Duplicate check (same phone, last 30 days) ────────────────────────────
+  // â”€â”€ Duplicate check (same phone, last 30 days) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   const recentOrder = await prisma.order.findFirst({
     where: {
@@ -147,7 +149,7 @@ export async function POST(req: NextRequest) {
   })
   const isDuplicate = !!recentOrder
 
-  // ── Load active offers to compute unit price ───────────────────────────────
+  // â”€â”€ Load active offers to compute unit price â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const offers = await prisma.offer.findMany({
     where:   { productId: data.product_id, isActive: true },
     orderBy: { minQuantity: "desc" },
@@ -183,7 +185,7 @@ export async function POST(req: NextRequest) {
 
   const userAgent = req.headers.get("user-agent") ?? undefined
 
-  // ── Prisma transaction ────────────────────────────────────────────────────
+  // â”€â”€ Prisma transaction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { order } = await prisma.$transaction(async (tx) => {
     // Create order
     const order = await tx.order.create({
@@ -247,7 +249,7 @@ export async function POST(req: NextRequest) {
       data: {
         type:      "NEW_ORDER",
         title:     "Nouvelle commande",
-        message:   `${data.customer_name} — ${(total / 100).toFixed(0)} MAD — ${city.nameFr}`,
+        message:   `${data.customer_name} â€” ${(total / 100).toFixed(0)} MAD â€” ${city.nameFr}`,
         productId: data.product_id,
         orderId:   order.id,
       },
@@ -259,7 +261,7 @@ export async function POST(req: NextRequest) {
         data: {
           type:      "DUPLICATE_ORDER",
           title:     "Commande en doublon",
-          message:   `${data.phone} a déjà commandé dans les 30 derniers jours`,
+          message:   `${data.phone} a dÃ©jÃ  commandÃ© dans les 30 derniers jours`,
           productId: data.product_id,
           orderId:   order.id,
         },
@@ -271,8 +273,8 @@ export async function POST(req: NextRequest) {
       await tx.notification.create({
         data: {
           type:      "BLACKLIST_ORDER",
-          title:     "Commande client blacklisté",
-          message:   `${data.phone} — ${existingCustomer?.blacklistReason ?? "Aucune raison"}`,
+          title:     "Commande client blacklistÃ©",
+          message:   `${data.phone} â€” ${existingCustomer?.blacklistReason ?? "Aucune raison"}`,
           productId: data.product_id,
           orderId:   order.id,
         },
@@ -282,7 +284,7 @@ export async function POST(req: NextRequest) {
     return { order }
   })
 
-  // ── WhatsApp admin alert (non-blocking, outside transaction) ─────────────
+  // â”€â”€ WhatsApp admin alert (non-blocking, outside transaction) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   sendAdminAlert({
     orderNumber,
     customerName: data.customer_name,

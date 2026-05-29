@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateSlug, ensureUniqueSlug } from "@/lib/slug"
 import type { Prisma } from "@prisma/client"
 
-// ─── Zod schemas ──────────────────────────────────────────────────────────────
+export const dynamic = 'force-dynamic'
+
+// â”€â”€â”€ Zod schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const createSchema = z.object({
   titleFr:        z.string().min(1).max(200),
@@ -21,7 +23,7 @@ const createSchema = z.object({
   status:         z.enum(["DRAFT","ACTIVE","PAUSED","ARCHIVED"]).default("DRAFT"),
   testingStatus:  z.enum(["TESTING","WINNER","SCALING","STOPPED"]).default("TESTING"),
   images:         z.array(z.string().url()).max(8).default([]),
-  // Supplier fields → ProductResearch
+  // Supplier fields â†’ ProductResearch
   supplierUrl:    z.string().url().optional().nullable(),
   alibabaUrl:     z.string().url().optional().nullable(),
   url1688:        z.string().url().optional().nullable(),
@@ -37,15 +39,15 @@ const listQuerySchema = z.object({
   pageSize:      z.coerce.number().int().min(1).max(100).default(20),
 })
 
-// ─── GET ──────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function GET(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   const params = Object.fromEntries(req.nextUrl.searchParams)
   const parsed = listQuerySchema.safeParse(params)
-  if (!parsed.success) return NextResponse.json({ error: "Paramètres invalides" }, { status: 422 })
+  if (!parsed.success) return NextResponse.json({ error: "ParamÃ¨tres invalides" }, { status: 422 })
 
   const { search, status, testingStatus, sort, page, pageSize } = parsed.data
 
@@ -102,11 +104,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ products, total, page, pageSize })
 }
 
-// ─── POST ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   let raw: unknown
   try { raw = await req.json() } catch {
@@ -116,7 +118,7 @@ export async function POST(req: NextRequest) {
   const parsed = createSchema.safeParse(raw)
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.errors[0]?.message ?? "Données invalides" },
+      { error: parsed.error.errors[0]?.message ?? "DonnÃ©es invalides" },
       { status: 422 },
     )
   }

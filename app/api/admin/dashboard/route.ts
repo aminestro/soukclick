@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const session = await getAdminSession()
   if (!session?.user) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+    return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
   }
 
   const now   = new Date()
@@ -16,7 +18,7 @@ export async function GET() {
 
   const sevenDaysAgo = new Date(today.getTime() - 6 * 86_400_000)
 
-  // ── Run all queries in parallel ───────────────────────────────────────────
+  // â”€â”€ Run all queries in parallel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const [
     todayOrders,
@@ -54,11 +56,11 @@ export async function GET() {
       where: {
         status:   { not: "ARCHIVED" },
         stock:    { gt: 0 },
-        // stock < low_stock_alert — raw comparison needed
+        // stock < low_stock_alert â€” raw comparison needed
       },
     }),
 
-    // Last 7 days — raw groupBy by date
+    // Last 7 days â€” raw groupBy by date
     prisma.$queryRaw<Array<{ day: Date; orders: bigint; revenue: bigint }>>`
       SELECT
         DATE_TRUNC('day', created_at) AS day,

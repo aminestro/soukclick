@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { fromCentimes } from "@/lib/format"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
 
   const companyId = req.nextUrl.searchParams.get("companyId") ?? undefined
 
@@ -22,8 +24,8 @@ export async function GET(req: NextRequest) {
   })
 
   const headers = [
-    "N° Commande","Client","Téléphone","Adresse","Ville","Wilaya",
-    "Produit","Quantité","Total (MAD)",
+    "NÂ° Commande","Client","TÃ©lÃ©phone","Adresse","Ville","Wilaya",
+    "Produit","QuantitÃ©","Total (MAD)",
   ]
 
   const rows = orders.map((o) => [

@@ -1,9 +1,11 @@
-import { Metadata } from "next"
+﻿import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { MerciPixelFire } from "@/components/store/MerciPixelFire"
 import { buildWhatsAppLink } from "@/lib/whatsapp"
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: "Merci pour votre commande !",
