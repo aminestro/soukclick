@@ -7,7 +7,7 @@ import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, ShoppingCart, Phone, Package,
   FileText, ImageIcon, FlaskConical, TrendingUp, Truck,
-  Users, Tag, BarChart2, Bell, Settings,
+  Users, Tag, BarChart2, Bell, Settings, Sparkles,
   LogOut, Menu, X, ChevronRight,
 } from "lucide-react"
 import type { AdminRole } from "@prisma/client"
@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { href: "/admin/customers",     label: "Clients",       icon: Users },
   { href: "/admin/offers",        label: "Offres",        icon: Tag },
   { href: "/admin/ads",           label: "Publicités",    icon: BarChart2 },
+  { href: "/admin/ai-tools",      label: "AI Tools",      icon: Sparkles },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/settings",      label: "Paramètres",    icon: Settings },
 ]
