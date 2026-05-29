@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="675" viewBox="0 0 900 675" role="img" aria-label="Washing machine organizer placeholder">
+  <rect width="900" height="675" fill="#F7F7F7"/>
+  <rect x="330" y="360" width="240" height="175" rx="18" fill="#FFFFFF" stroke="#111111" stroke-width="12"/>
+  <circle cx="450" cy="445" r="48" fill="#F7F7F7" stroke="#B91C1C" stroke-width="10"/>
+  <g stroke="#111111" stroke-width="14" stroke-linecap="round">
+    <path d="M260 150h380M260 225h380M260 300h380"/>
+    <path d="M260 135v400M640 135v400"/>
+  </g>
+  <rect x="310" y="175" width="70" height="38" rx="8" fill="#B91C1C"/>
+  <rect x="500" y="250" width="70" height="38" rx="8" fill="#B91C1C"/>
+</svg>
+

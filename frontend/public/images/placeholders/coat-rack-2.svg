@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="675" viewBox="0 0 900 675" role="img" aria-label="Clothes organization placeholder">
+  <rect width="900" height="675" fill="#FFFFFF"/>
+  <rect x="185" y="150" width="530" height="370" rx="30" fill="#F7F7F7"/>
+  <text x="450" y="315" text-anchor="middle" font-family="Arial" font-size="40" font-weight="700" fill="#111111">Daily Clothes</text>
+  <text x="450" y="370" text-anchor="middle" font-family="Arial" font-size="30" fill="#B91C1C">Organized</text>
+</svg>
+

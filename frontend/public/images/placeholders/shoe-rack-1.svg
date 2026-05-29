@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="675" viewBox="0 0 900 675" role="img" aria-label="Shoe rack placeholder">
+  <rect width="900" height="675" fill="#F7F7F7"/>
+  <g stroke="#111111" stroke-width="16" stroke-linecap="round">
+    <path d="M250 185h400M250 265h400M250 345h400M250 425h400M250 505h400"/>
+    <path d="M250 165v365M650 165v365"/>
+  </g>
+  <g fill="#B91C1C">
+    <ellipse cx="345" cy="238" rx="55" ry="18"/>
+    <ellipse cx="535" cy="318" rx="55" ry="18"/>
+    <ellipse cx="400" cy="478" rx="55" ry="18"/>
+  </g>
+</svg>
+

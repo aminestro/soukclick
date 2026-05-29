@@ -1,0 +1,74 @@
+services:
+  soukclick_database:
+    image: postgres:16-alpine
+    container_name: soukclick_database
+    environment:
+      POSTGRES_DB: soukclick
+      POSTGRES_USER: soukclick
+      POSTGRES_PASSWORD: soukclick
+    ports:
+      - "5432:5432"
+    volumes:
+      - soukclick_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soukclick -d soukclick"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  soukclick_redis:
+    image: redis:7-alpine
+    container_name: soukclick_redis
+    ports:
+      - "6379:6379"
+
+  soukclick_backend:
+    build:
+      context: ./backend
+    container_name: soukclick_backend
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://soukclick:soukclick@soukclick_database:5432/soukclick
+      REDIS_URL: redis://soukclick_redis:6379/0
+    depends_on:
+      soukclick_database:
+        condition: service_healthy
+      soukclick_redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  soukclick_frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_META_PIXEL_ID: ""
+        NEXT_PUBLIC_TIKTOK_PIXEL_ID: ""
+        NEXT_PUBLIC_SNAP_PIXEL_ID: ""
+    container_name: soukclick_frontend
+    env_file:
+      - ./frontend/.env
+    environment:
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      soukclick_backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  soukclick_postgres_data:

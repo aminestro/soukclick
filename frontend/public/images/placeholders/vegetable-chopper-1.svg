@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="675" viewBox="0 0 900 675" role="img" aria-label="Vegetable chopper placeholder">
+  <rect width="900" height="675" fill="#F7F7F7"/>
+  <rect x="210" y="250" width="480" height="210" rx="24" fill="#FFFFFF" stroke="#B91C1C" stroke-width="10"/>
+  <rect x="285" y="185" width="330" height="110" rx="18" fill="#111111"/>
+  <circle cx="340" cy="355" r="38" fill="#B91C1C"/>
+  <circle cx="450" cy="355" r="38" fill="#15803D"/>
+  <circle cx="560" cy="355" r="38" fill="#B45309"/>
+  <text x="450" y="555" text-anchor="middle" font-family="Arial" font-size="38" font-weight="700" fill="#111111">Souk Click</text>
+</svg>
+

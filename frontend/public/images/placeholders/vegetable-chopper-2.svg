@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="675" viewBox="0 0 900 675" role="img" aria-label="Vegetable prep placeholder">
+  <rect width="900" height="675" fill="#FFFFFF"/>
+  <rect x="165" y="175" width="570" height="325" rx="32" fill="#F7F7F7"/>
+  <path d="M280 385h340" stroke="#B91C1C" stroke-width="18" stroke-linecap="round"/>
+  <path d="M330 295h240" stroke="#111111" stroke-width="18" stroke-linecap="round"/>
+  <text x="450" y="560" text-anchor="middle" font-family="Arial" font-size="34" font-weight="700" fill="#B91C1C">Kitchen Solution</text>
+</svg>
+

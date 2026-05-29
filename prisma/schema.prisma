@@ -1,0 +1,449 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum TestingStatus {
+  TESTING
+  WINNER
+  SCALING
+  STOPPED
+}
+
+enum LandingPageTemplate {
+  PROBLEM_SOLUTION
+  GADGET_DEMO
+  BEFORE_AFTER
+  BUNDLE
+  VIRAL
+}
+
+enum OrderStatus {
+  NOUVEAU
+  CONFIRME
+  PREPARE
+  EXPEDIE
+  LIVRE
+  ANNULE
+  RETOURNE
+}
+
+enum ConfirmationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  NO_ANSWER
+  CALLBACK
+}
+
+enum DeliveryOrderStatus {
+  READY_TO_SHIP
+  SHIPPED
+  DELIVERED
+  RETURNED
+}
+
+enum ExportFormat {
+  EXCEL
+  CSV
+}
+
+enum CreativeType {
+  IMAGE
+  VIDEO
+  UGC_SCRIPT
+  HOOK
+  AD_COPY
+}
+
+enum Platform {
+  META
+  TIKTOK
+  GOOGLE
+  ALL
+}
+
+enum OfferType {
+  QUANTITY_DISCOUNT
+  FREE_SHIPPING
+  BUNDLE
+}
+
+enum NotificationType {
+  NEW_ORDER
+  LOW_STOCK
+  BLACKLIST_ORDER
+  DUPLICATE_ORDER
+  DELIVERY_UPDATE
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  AGENT
+}
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+
+model Admin {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      AdminRole @default(AGENT)
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  confirmedOrders    Order[]              @relation("ConfirmedBy")
+  orderStatusHistory OrderStatusHistory[]
+
+  @@map("admins")
+}
+
+// ─── Product ──────────────────────────────────────────────────────────────────
+
+model Product {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  titleFr         String        @map("title_fr")
+  titleAr         String?       @map("title_ar")
+  descriptionFr   String?       @map("description_fr")
+  descriptionAr   String?       @map("description_ar")
+  price           Int           // centimes
+  costPrice       Int           @default(0) @map("cost_price")   // centimes
+  comparePrice    Int?          @map("compare_price")            // centimes
+  stock           Int           @default(0)
+  lowStockAlert   Int           @default(10) @map("low_stock_alert")
+  status          ProductStatus @default(DRAFT)
+  testingStatus   TestingStatus @default(TESTING) @map("testing_status")
+  images          String[]
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  landingPages    LandingPage[]
+  orders          Order[]
+  creatives       Creative[]
+  reviews         Review[]
+  offers          Offer[]
+  research        ProductResearch?
+  adReports       AdsDailyReport[]
+  notifications   Notification[]
+  upsellTriggers  Upsell[]      @relation("UpsellTrigger")
+  upsellTargets   Upsell[]      @relation("UpsellTarget")
+
+  @@map("products")
+}
+
+// ─── LandingPage ──────────────────────────────────────────────────────────────
+
+model LandingPage {
+  id          String              @id @default(cuid())
+  productId   String              @map("product_id")
+  slug        String              @unique
+  template    LandingPageTemplate @default(GADGET_DEMO)
+  sections    Json                @default("[]")
+  isActive    Boolean             @default(false) @map("is_active")
+  metaTitle   String?             @map("meta_title")
+  metaDesc    String?             @map("meta_desc")
+  metaKeywords String?            @map("meta_keywords")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orders  Order[]
+
+  @@map("landing_pages")
+}
+
+// ─── City ─────────────────────────────────────────────────────────────────────
+
+model City {
+  id            String  @id @default(cuid())
+  nameFr        String  @unique @map("name_fr")
+  nameAr        String? @map("name_ar")
+  wilaya        String
+  wilayaCode    String  @map("wilaya_code") // "01" – "12"
+  deliveryPrice Int     @map("delivery_price") // centimes
+  deliveryDays  Int     @default(3) @map("delivery_days")
+  isRemote      Boolean @default(false) @map("is_remote")
+  isActive      Boolean @default(true) @map("is_active")
+
+  orders Order[]
+
+  @@map("cities")
+}
+
+// ─── DeliveryCompany ──────────────────────────────────────────────────────────
+
+model DeliveryCompany {
+  id           String       @id @default(cuid())
+  name         String
+  slug         String       @unique
+  logoUrl      String?      @map("logo_url")
+  trackingUrl  String?      @map("tracking_url")
+  isActive     Boolean      @default(true) @map("is_active")
+  exportFormat ExportFormat @default(CSV) @map("export_format")
+
+  orders Order[]
+
+  @@map("delivery_companies")
+}
+
+// ─── Customer ─────────────────────────────────────────────────────────────────
+
+model Customer {
+  id               String    @id @default(cuid())
+  phone            String    @unique
+  name             String
+  totalOrders      Int       @default(0) @map("total_orders")
+  totalRevenue     Int       @default(0) @map("total_revenue")   // centimes
+  totalProfit      Int       @default(0) @map("total_profit")    // centimes
+  lastOrderAt      DateTime? @map("last_order_at")
+  favoriteProductId String?  @map("favorite_product_id")
+  isBlacklisted    Boolean   @default(false) @map("is_blacklisted")
+  blacklistReason  String?   @map("blacklist_reason")
+  tags             String[]
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  @@map("customers")
+}
+
+// ─── Order ────────────────────────────────────────────────────────────────────
+
+model Order {
+  id                  String             @id @default(cuid())
+  orderNumber         String             @unique @map("order_number") // MAR-XXXXXX
+  productId           String             @map("product_id")
+  landingPageId       String?            @map("landing_page_id")
+  deliveryCompanyId   String?            @map("delivery_company_id")
+  cityId              String             @map("city_id")
+
+  // Customer
+  customerName        String             @map("customer_name")
+  phone               String
+  wilaya              String
+  address             String
+
+  // Financials (all centimes)
+  quantity            Int
+  unitPrice           Int                @map("unit_price")
+  deliveryPrice       Int                @map("delivery_price")
+  total               Int
+
+  // Status
+  status              OrderStatus        @default(NOUVEAU)
+  confirmationStatus  ConfirmationStatus @default(PENDING) @map("confirmation_status")
+  deliveryStatus      DeliveryOrderStatus? @map("delivery_status")
+  confirmationAttempts Int               @default(0) @map("confirmation_attempts")
+  confirmedAt         DateTime?          @map("confirmed_at")
+  confirmedById       String?            @map("confirmed_by")
+  shippedAt           DateTime?          @map("shipped_at")
+  deliveredAt         DateTime?          @map("delivered_at")
+  cancelledAt         DateTime?          @map("cancelled_at")
+  returnedAt          DateTime?          @map("returned_at")
+  agentNotes          String?            @map("agent_notes")
+  trackingNumber      String?            @map("tracking_number")
+
+  // UTM / tracking
+  utmSource           String?            @map("utm_source")
+  utmMedium           String?            @map("utm_medium")
+  utmCampaign         String?            @map("utm_campaign")
+  utmContent          String?            @map("utm_content")
+  utmTerm             String?            @map("utm_term")
+  fbclid              String?
+  ttclid              String?
+  gclid               String?
+  ipAddress           String?            @map("ip_address")
+  userAgent           String?            @map("user_agent")
+  pixelEventId        String?            @map("pixel_event_id")
+
+  // Risk
+  isDuplicate         Boolean            @default(false) @map("is_duplicate")
+  isBlacklisted       Boolean            @default(false) @map("is_blacklisted")
+  riskScore           Int                @default(0) @map("risk_score")
+
+  // Call center
+  callbackAt          DateTime?          @map("callback_at")
+
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  product         Product          @relation(fields: [productId], references: [id])
+  landingPage     LandingPage?     @relation(fields: [landingPageId], references: [id])
+  deliveryCompany DeliveryCompany? @relation(fields: [deliveryCompanyId], references: [id])
+  city            City             @relation(fields: [cityId], references: [id])
+  confirmedBy     Admin?           @relation("ConfirmedBy", fields: [confirmedById], references: [id])
+  statusHistory   OrderStatusHistory[]
+  notifications   Notification[]
+
+  @@index([phone])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// ─── OrderStatusHistory ───────────────────────────────────────────────────────
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String      @map("order_id")
+  oldStatus OrderStatus @map("old_status")
+  newStatus OrderStatus @map("new_status")
+  agentId   String?     @map("agent_id")
+  note      String?
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  agent Admin? @relation(fields: [agentId], references: [id])
+
+  @@map("order_status_history")
+}
+
+// ─── Creative ─────────────────────────────────────────────────────────────────
+
+model Creative {
+  id        String       @id @default(cuid())
+  productId String       @map("product_id")
+  type      CreativeType
+  platform  Platform
+  title     String
+  content   String?
+  fileUrl   String?      @map("file_url")
+  isWinner  Boolean      @default(false) @map("is_winner")
+  notes     String?
+  tags      String[]
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("creatives")
+}
+
+// ─── Review ───────────────────────────────────────────────────────────────────
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String   @map("product_id")
+  authorName String   @map("author_name")
+  authorCity String?  @map("author_city")
+  rating     Int      @default(5)
+  content    String
+  imageUrl   String?  @map("image_url")
+  isVerified Boolean  @default(false) @map("is_verified")
+  sortOrder  Int      @default(0) @map("sort_order")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+// ─── Offer ────────────────────────────────────────────────────────────────────
+
+model Offer {
+  id              String    @id @default(cuid())
+  productId       String    @map("product_id")
+  type            OfferType
+  labelFr         String    @map("label_fr")
+  labelAr         String?   @map("label_ar")
+  minQuantity     Int       @default(1) @map("min_quantity")
+  discountPercent Int       @default(0) @map("discount_percent")
+  freeShipping    Boolean   @default(false) @map("free_shipping")
+  isActive        Boolean   @default(true) @map("is_active")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("offers")
+}
+
+// ─── ProductResearch ──────────────────────────────────────────────────────────
+
+model ProductResearch {
+  id               String   @id @default(cuid())
+  productId        String   @unique @map("product_id")
+  supplierUrl      String?  @map("supplier_url")
+  alibabaUrl       String?  @map("alibaba_url")
+  url1688          String?  @map("url_1688")
+  buyingPrice      Int?     @map("buying_price")   // centimes
+  shippingCost     Int?     @map("shipping_cost")  // centimes
+  competitorUrls   String[] @map("competitor_urls")
+  competitorPrices Int[]    @map("competitor_prices") // centimes
+  testingNotes     String?  @map("testing_notes")
+  winningScore     Int      @default(0) @map("winning_score")
+  breakEvenCpa     Int?     @map("break_even_cpa") // centimes
+  adSpendTotal     Int      @default(0) @map("ad_spend_total") // centimes
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_research")
+}
+
+// ─── AdsDailyReport ───────────────────────────────────────────────────────────
+
+model AdsDailyReport {
+  id          String   @id @default(cuid())
+  productId   String   @map("product_id")
+  date        DateTime @db.Date
+  platform    Platform
+  spend       Int      @default(0)       // centimes
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  orders      Int      @default(0)
+  revenue     Int      @default(0)       // centimes
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, date, platform])
+  @@map("ads_daily_reports")
+}
+
+// ─── Notification ─────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  productId String?          @map("product_id")
+  orderId   String?          @map("order_id")
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  product Product? @relation(fields: [productId], references: [id])
+  order   Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// ─── Upsell ───────────────────────────────────────────────────────────────────
+
+model Upsell {
+  id               String  @id @default(cuid())
+  triggerProductId String  @map("trigger_product_id")
+  upsellProductId  String  @map("upsell_product_id")
+  discountPercent  Int     @default(0) @map("discount_percent")
+  isActive         Boolean @default(true) @map("is_active")
+
+  triggerProduct Product @relation("UpsellTrigger", fields: [triggerProductId], references: [id])
+  upsellProduct  Product @relation("UpsellTarget",  fields: [upsellProductId],  references: [id])
+
+  @@map("upsells")
+}

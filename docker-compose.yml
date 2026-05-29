@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+
+  # ─── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: soukclick_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER:-soukclick}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB:       ${POSTGRES_DB:-soukclick}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"          # remove in production / EasyPanel internal network
+    healthcheck:
+      test:     ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-soukclick}"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+    networks:
+      - soukclick_net
+
+  # ─── App ────────────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: soukclick_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-soukclick}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-soukclick}"
+      NODE_ENV:     ${NODE_ENV:-production}
+      PORT:         ${PORT:-3000}
+      APP_URL:      ${APP_URL:-http://localhost:3000}
+      JWT_SECRET:   ${JWT_SECRET:?JWT_SECRET is required}
+      COOKIE_SECRET:${COOKIE_SECRET:?COOKIE_SECRET is required}
+      # Pass-through optional vars
+      RESEND_API_KEY:       ${RESEND_API_KEY:-}
+      S3_ENDPOINT:          ${S3_ENDPOINT:-}
+      S3_REGION:            ${S3_REGION:-auto}
+      S3_BUCKET:            ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID:     ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_PUBLIC_URL:        ${S3_PUBLIC_URL:-}
+      LOG_LEVEL:            ${LOG_LEVEL:-info}
+      SEED:                 ${SEED:-false}
+    ports:
+      - "${PORT:-3000}:3000"
+    networks:
+      - soukclick_net
+    labels:
+      # EasyPanel / Traefik labels (uncomment when deploying)
+      # traefik.enable: "true"
+      # traefik.http.routers.soukclick.rule: "Host(`your-domain.com`)"
+      # traefik.http.routers.soukclick.entrypoints: "websecure"
+      # traefik.http.routers.soukclick.tls.certresolver: "letsencrypt"
+      # traefik.http.services.soukclick.loadbalancer.server.port: "3000"
+
+volumes:
+  postgres_data:
+
+networks:
+  soukclick_net:
+    driver: bridge

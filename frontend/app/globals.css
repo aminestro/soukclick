@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 7%;
+  --primary: 0 74% 42%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 0 0% 97%;
+  --muted-foreground: 220 9% 35%;
+  --border: 220 13% 91%;
+  --font-arabic: "Tajawal";
+  --font-latin: "Inter";
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #fbfaf8;
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+::selection {
+  background: #b91c1c;
+  color: white;
+}

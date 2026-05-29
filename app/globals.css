@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent font size inflation on mobile */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Better tap targets on mobile */
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@layer components {
+  /* Shared admin form field styles used across builder editors */
+  .field-label {
+    @apply mb-1.5 block text-sm font-medium text-gray-700;
+  }
+  .field-input {
+    @apply w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm
+           outline-none transition focus:border-orange-400 focus:ring-1 focus:ring-orange-400;
+  }
+}
