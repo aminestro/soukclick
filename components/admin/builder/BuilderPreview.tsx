@@ -18,6 +18,7 @@ interface PreviewProduct {
 interface BuilderPreviewProps {
   sections: LandingSection[]
   product:  PreviewProduct
+  language?: string
 }
 
 type ViewMode = "mobile" | "desktop"
@@ -25,7 +26,9 @@ type ViewMode = "mobile" | "desktop"
 const ZOOM_LEVELS = [50, 75, 100] as const
 type ZoomLevel = typeof ZOOM_LEVELS[number]
 
-export function BuilderPreview({ sections, product }: BuilderPreviewProps) {
+export function BuilderPreview({ sections, product, language = "fr" }: BuilderPreviewProps) {
+  const isRtl = language === "ar" || language === "darija"
+  const langAttr = language === "ar" || language === "darija" ? "ar" : "fr"
   const [viewMode,   setViewMode]   = useState<ViewMode>("mobile")
   const [zoom,       setZoom]       = useState<ZoomLevel>(100)
   const [renderKey,  setRenderKey]  = useState(0)
@@ -155,11 +158,11 @@ export function BuilderPreview({ sections, product }: BuilderPreviewProps) {
                       <div className="h-8 w-8 rounded-full border-3 border-gray-200 border-t-orange-500 animate-spin" />
                     </div>
                   )}
-                  <div key={renderKey}>
+                  <div key={renderKey} dir={isRtl ? "rtl" : "ltr"} lang={langAttr}>
                     {orderedSections.length === 0 ? (
                       <EmptyPreview />
                     ) : (
-                      <SectionRenderer sections={displayed} product={product} />
+                      <SectionRenderer sections={displayed} product={product} language={language} />
                     )}
                   </div>
                 </div>

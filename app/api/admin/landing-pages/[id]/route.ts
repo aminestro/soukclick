@@ -42,12 +42,13 @@ export async function GET(
 // ─── PATCH ────────────────────────────────────────────────────────────────────
 
 const patchSchema = z.object({
-  sections:    z.array(z.unknown()).optional(),
-  isActive:    z.boolean().optional(),
-  metaTitle:   z.string().max(160).nullable().optional(),
-  metaDesc:    z.string().max(320).nullable().optional(),
-  metaKeywords:z.string().max(200).nullable().optional(),
-  slug:        z.string().max(80).optional(),
+  sections:     z.array(z.unknown()).optional(),
+  isActive:     z.boolean().optional(),
+  language:     z.enum(["fr", "darija", "ar"]).optional(),
+  metaTitle:    z.string().max(160).nullable().optional(),
+  metaDesc:     z.string().max(320).nullable().optional(),
+  metaKeywords: z.string().max(200).nullable().optional(),
+  slug:         z.string().max(80).optional(),
 })
 
 export async function PATCH(

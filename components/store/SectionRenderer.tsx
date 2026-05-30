@@ -19,12 +19,21 @@ interface SectionRendererProps {
     reviews:      Review[]
     offers:       Offer[]
   }
+  // "fr" (default) | "darija" | "ar" — controls dir/lang on the wrapper
+  language?: string
 }
 
-export function SectionRenderer({ sections, product }: SectionRendererProps) {
+export function SectionRenderer({ sections, product, language = "fr" }: SectionRendererProps) {
+  const isRtl    = language === "ar" || language === "darija"
+  const langAttr = isRtl ? "ar" : "fr"
+
+  const orderedEnabled = [...sections]
+    .filter((s) => s.enabled)
+    .sort((a, b) => a.order - b.order)
+
   return (
-    <>
-      {sections.map((section, idx) => {
+    <div dir={isRtl ? "rtl" : "ltr"} lang={langAttr}>
+      {orderedEnabled.map((section, idx) => {
         switch (section.type) {
           case "hero":
             return (
@@ -77,6 +86,6 @@ export function SectionRenderer({ sections, product }: SectionRendererProps) {
             return null
         }
       })}
-    </>
+    </div>
   )
 }

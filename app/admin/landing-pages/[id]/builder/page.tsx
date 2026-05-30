@@ -17,10 +17,13 @@ import type { Offer, Review } from "@prisma/client"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export type PageLanguage = "fr" | "darija" | "ar"
+
 interface LPData {
   id:        string
   slug:      string
   isActive:  boolean
+  language:  string
   metaTitle: string | null
   metaDesc:  string | null
   template:  string
@@ -36,6 +39,12 @@ interface LPData {
   }
 }
 
+const LANGUAGES: Array<{ value: PageLanguage; flag: string; label: string; dir: "ltr" | "rtl" }> = [
+  { value: "fr",     flag: "🇫🇷", label: "FR",     dir: "ltr" },
+  { value: "darija", flag: "🇲🇦", label: "Darija", dir: "rtl" },
+  { value: "ar",     flag: "🇸🇦", label: "AR",     dir: "rtl" },
+]
+
 // ─── Inline title editor ──────────────────────────────────────────────────────
 
 function EditableTitle({ value, onSave }: { value: string; onSave: (v: string) => void }) {
@@ -43,16 +52,8 @@ function EditableTitle({ value, onSave }: { value: string; onSave: (v: string) =
   const [draft,   setDraft]   = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  function start() {
-    setDraft(value)
-    setEditing(true)
-    setTimeout(() => inputRef.current?.select(), 10)
-  }
-
-  function commit() {
-    if (draft.trim()) onSave(draft.trim())
-    setEditing(false)
-  }
+  function start() { setDraft(value); setEditing(true); setTimeout(() => inputRef.current?.select(), 10) }
+  function commit() { if (draft.trim()) onSave(draft.trim()); setEditing(false) }
 
   if (editing) {
     return (
@@ -77,6 +78,40 @@ function EditableTitle({ value, onSave }: { value: string; onSave: (v: string) =
       <span className="truncate max-w-[160px]">{value}</span>
       <Pencil className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
     </button>
+  )
+}
+
+// ─── Language selector ────────────────────────────────────────────────────────
+
+function LanguageSelector({
+  value,
+  onChange,
+}: {
+  value:    PageLanguage
+  onChange: (lang: PageLanguage) => void
+}) {
+  return (
+    <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50/80 p-0.5">
+      {LANGUAGES.map((lang) => (
+        <button
+          key={lang.value}
+          type="button"
+          onClick={() => onChange(lang.value)}
+          title={`${lang.flag} ${lang.label}${lang.dir === "rtl" ? " (RTL)" : ""}`}
+          className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition-all ${
+            value === lang.value
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-800"
+          }`}
+        >
+          <span>{lang.flag}</span>
+          <span className="hidden sm:inline">{lang.label}</span>
+          {lang.dir === "rtl" && value === lang.value && (
+            <span className="text-[8px] font-bold text-orange-500 leading-none">RTL</span>
+          )}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -138,6 +173,7 @@ export default function BuilderPage() {
   const [sections,     setSections]     = useState<LandingSection[]>([])
   const [selectedType, setSelectedType] = useState<SectionType | null>(null)
   const [isActive,     setIsActive]     = useState(false)
+  const [language,     setLanguageState] = useState<PageLanguage>("fr")
   const [saving,       setSaving]       = useState(false)
   const [dirty,        setDirty]        = useState(false)
   const [loading,      setLoading]      = useState(true)
@@ -154,12 +190,28 @@ export default function BuilderPage() {
         setSections(d.sections ?? [])
         setIsActive(d.isActive)
         setPageTitle(d.product.titleFr)
+        const lang = (d.language ?? "fr") as PageLanguage
+        setLanguageState(LANGUAGES.some((l) => l.value === lang) ? lang : "fr")
         const first = (d.sections ?? []).find((s) => s.enabled)
         if (first) setSelectedType(first.type)
         setLoading(false)
       })
       .catch(() => { toast.error("Erreur de chargement"); router.push("/admin/landing-pages") })
   }, [id, router])
+
+  // ── Language change ───────────────────────────────────────────────────────
+
+  async function handleLanguageChange(lang: PageLanguage) {
+    setLanguageState(lang)
+    // Persist immediately — language change is a quick toggle, not part of section dirty state
+    await fetch(`/api/admin/landing-pages/${id}`, {
+      method:  "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ language: lang }),
+    })
+    const langMeta = LANGUAGES.find((l) => l.value === lang)
+    toast.success(`Langue : ${langMeta?.flag} ${langMeta?.label}${langMeta?.dir === "rtl" ? " (RTL)" : ""}`)
+  }
 
   // ── Sections ──────────────────────────────────────────────────────────────
 
@@ -291,6 +343,11 @@ export default function BuilderPage() {
         {/* Right */}
         <div className="flex items-center gap-1.5">
 
+          {/* Language selector */}
+          <LanguageSelector value={language} onChange={handleLanguageChange} />
+
+          <div className="h-5 w-px bg-gray-200 shrink-0" />
+
           {/* Status badge + toggle */}
           <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-1.5">
             <div className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-green-500" : "bg-gray-400"}`} />
@@ -362,7 +419,7 @@ export default function BuilderPage() {
 
         {/* Center — preview */}
         <div className="flex-1 overflow-hidden">
-          <BuilderPreview sections={sections} product={previewProduct} />
+          <BuilderPreview sections={sections} product={previewProduct} language={language} />
         </div>
 
         {/* Right — editor (360px) */}
@@ -371,6 +428,7 @@ export default function BuilderPage() {
             <SectionEditor
               section={selectedSection}
               onChange={handleSectionEdit}
+              language={language}
               reviews={lpData.product.reviews.map((r) => ({
                 id:         r.id,
                 authorName: r.authorName,
@@ -387,7 +445,7 @@ export default function BuilderPage() {
               <div>
                 <p className="text-sm font-semibold text-gray-700">Aucune section sélectionnée</p>
                 <p className="mt-1 text-[12px] text-gray-400 leading-relaxed">
-                  Cliquez sur une section dans la liste de gauche pour l'éditer
+                  Cliquez sur une section dans la liste de gauche pour l&apos;éditer
                 </p>
               </div>
             </div>

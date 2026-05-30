@@ -150,17 +150,18 @@ model Product {
 // ─── LandingPage ──────────────────────────────────────────────────────────────
 
 model LandingPage {
-  id          String              @id @default(cuid())
-  productId   String              @map("product_id")
-  slug        String              @unique
-  template    LandingPageTemplate @default(GADGET_DEMO)
-  sections    Json                @default("[]")
-  isActive    Boolean             @default(false) @map("is_active")
-  metaTitle   String?             @map("meta_title")
-  metaDesc    String?             @map("meta_desc")
-  metaKeywords String?            @map("meta_keywords")
-  createdAt   DateTime            @default(now()) @map("created_at")
-  updatedAt   DateTime            @updatedAt @map("updated_at")
+  id           String              @id @default(cuid())
+  productId    String              @map("product_id")
+  slug         String              @unique
+  template     LandingPageTemplate @default(GADGET_DEMO)
+  sections     Json                @default("[]")
+  isActive     Boolean             @default(false) @map("is_active")
+  language     String              @default("fr")
+  metaTitle    String?             @map("meta_title")
+  metaDesc     String?             @map("meta_desc")
+  metaKeywords String?             @map("meta_keywords")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   orders  Order[]

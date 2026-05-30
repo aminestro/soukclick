@@ -20,6 +20,13 @@ interface SectionEditorProps {
   onChange:  (section: LandingSection) => void
   reviews:   ReviewOption[]
   productId: string
+  language?: string
+}
+
+const LANG_LABEL: Record<string, string> = {
+  fr:     "🇫🇷 Français",
+  darija: "🇲🇦 Darija",
+  ar:     "🇸🇦 Arabe",
 }
 
 const SECTION_META: Record<LandingSection["type"], { label: string; icon: string; tabs: string[] }> = {
@@ -33,9 +40,10 @@ const SECTION_META: Record<LandingSection["type"], { label: string; icon: string
   cta:          { label: "Appel à l'action",  icon: "🎯", tabs: ["Contenu"] },
 }
 
-export function SectionEditor({ section, onChange, reviews, productId }: SectionEditorProps) {
+export function SectionEditor({ section, onChange, reviews, productId, language = "fr" }: SectionEditorProps) {
   const [activeTab, setActiveTab] = useState(0)
-  const meta = SECTION_META[section.type]
+  const meta  = SECTION_META[section.type]
+  const isRtl = language === "ar" || language === "darija"
 
   function patchData(newData: LandingSection["data"]) {
     onChange({ ...section, data: newData } as LandingSection)
@@ -46,13 +54,25 @@ export function SectionEditor({ section, onChange, reviews, productId }: Section
 
       {/* Panel header */}
       <div className="border-b border-gray-100 px-4 py-3.5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-50 text-lg leading-none">
-            {meta.icon}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-50 text-lg leading-none">
+              {meta.icon}
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-gray-900 leading-tight">Éditer</p>
+              <p className="text-[11px] text-gray-400 leading-tight">{meta.label}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[13px] font-bold text-gray-900 leading-tight">Éditer</p>
-            <p className="text-[11px] text-gray-400 leading-tight">{meta.label}</p>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold text-gray-400">
+              {LANG_LABEL[language] ?? language}
+            </span>
+            {isRtl && (
+              <span className="rounded-md bg-orange-100 px-1.5 py-0.5 text-[9px] font-bold text-orange-600 leading-none">
+                RTL
+              </span>
+            )}
           </div>
         </div>
 
@@ -78,7 +98,7 @@ export function SectionEditor({ section, onChange, reviews, productId }: Section
       </div>
 
       {/* Editor body */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4" dir={isRtl ? "rtl" : "ltr"}>
         {section.type === "hero" && (
           <HeroEditor data={section.data} onChange={patchData} />
         )}

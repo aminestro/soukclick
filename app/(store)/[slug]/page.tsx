@@ -92,6 +92,7 @@ export default async function LandingPage({ params }: PageProps) {
         <SectionRenderer
           sections={sections}
           product={product}
+          language={landingPage.language ?? "fr"}
         />
 
         {/* Order form — always rendered, CTA buttons scroll here */}

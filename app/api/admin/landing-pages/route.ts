@@ -1,91 +1,102 @@
-﻿import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { generateSlug, ensureUniqueSlug } from "@/lib/slug"
+import { generateSlug } from "@/lib/slug"
 import type { LandingSection } from "@/types/landing"
 
 export const dynamic = 'force-dynamic'
 
-// â”€â”€â”€ Default sections per template â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Default sections per template ───────────────────────────────────────────
 
 function makeHero(): LandingSection {
   return {
     type: "hero", enabled: true, order: 1,
     data: {
-      headline: "Le produit qui change tout",
-      subheadline: "Livraison rapide partout au Maroc â€” Paiement Ã  la livraison",
-      image_url: null, video_url: null,
-      cta_text: "Commander Maintenant", cta_color: "#f97316",
-      show_price: true, show_compare_price: true,
-      badges: ["cod", "livraison_gratuite", "garantie"],
+      headline:           "Le produit qui change tout",
+      subheadline:        "Livraison rapide partout au Maroc - Paiement a la livraison",
+      image_url:          null,
+      video_url:          null,
+      cta_text:           "Commander Maintenant",
+      cta_color:          "#f97316",
+      show_price:         true,
+      show_compare_price: true,
+      badges:             ["cod", "livraison_gratuite", "garantie"],
     },
   }
 }
+
 function makeBenefits(order: number): LandingSection {
   return {
     type: "benefits", enabled: true, order,
     data: {
       title: "Pourquoi choisir ce produit ?",
       items: [
-        { icon: "âš¡", title: "Rapide",    description: "RÃ©sultats visibles dÃ¨s la premiÃ¨re utilisation." },
-        { icon: "âœ…", title: "Fiable",    description: "TestÃ© et approuvÃ© par des milliers de clients." },
-        { icon: "ðŸšš", title: "Livraison", description: "Partout au Maroc en 24â€“72h." },
+        { icon: "⚡", title: "Rapide",    description: "Resultats visibles des la premiere utilisation." },
+        { icon: "✅", title: "Fiable",    description: "Teste et approuve par des milliers de clients." },
+        { icon: "🚚", title: "Livraison", description: "Partout au Maroc en 24-72h." },
       ],
     },
   }
 }
+
 function makeFeatures(order: number): LandingSection {
   return {
     type: "features", enabled: true, order,
     data: {
-      title: "CaractÃ©ristiques",
+      title: "Caracteristiques",
       items: [
-        { image_url: null, title: "QualitÃ© premium", description: "FabriquÃ© avec les meilleurs matÃ©riaux." },
-        { image_url: null, title: "Facile Ã  utiliser", description: "Aucune installation requise." },
+        { image_url: null, title: "Qualite premium",   description: "Fabrique avec les meilleurs materiaux." },
+        { image_url: null, title: "Facile a utiliser", description: "Aucune installation requise." },
       ],
     },
   }
 }
+
 function makeVideo(order: number): LandingSection {
   return {
     type: "video", enabled: true, order,
-    data: { url: "", thumbnail_url: null, caption: "Regardez comment Ã§a marche" },
+    data: { url: "", thumbnail_url: null, caption: "Regardez comment ca marche" },
   }
 }
+
 function makeReviews(order: number): LandingSection {
   return {
     type: "reviews", enabled: true, order,
     data: { title: "Ce que disent nos clients", review_ids: [] },
   }
 }
+
 function makeFAQ(order: number): LandingSection {
   return {
     type: "faq", enabled: true, order,
     data: {
-      title: "Questions frÃ©quentes",
+      title: "Questions frequentes",
       items: [
-        { question: "Comment passer une commande ?",        answer: "Remplissez le formulaire et notre Ã©quipe vous contacte sous 24h." },
-        { question: "Quels sont les dÃ©lais de livraison ?", answer: "1 Ã  5 jours selon votre ville." },
-        { question: "Comment fonctionne le paiement ?",     answer: "Vous payez uniquement Ã  la rÃ©ception de votre commande." },
+        { question: "Comment passer une commande ?",       answer: "Remplissez le formulaire et notre equipe vous contacte sous 24h." },
+        { question: "Quels sont les delais de livraison ?", answer: "1 a 5 jours selon votre ville." },
+        { question: "Comment fonctionne le paiement ?",    answer: "Vous payez uniquement a la reception de votre commande." },
       ],
     },
   }
 }
+
 function makeCTA(order: number): LandingSection {
   return {
     type: "cta", enabled: true, order,
     data: {
-      headline: "Commandez maintenant â€” Stock limitÃ© !",
-      cta_text: "Je Commande", cta_color: "#f97316",
-      urgency_text: "âš ï¸ Offre limitÃ©e â€” livraison gratuite aujourd'hui seulement",
+      headline:     "Commandez maintenant - Stock limite !",
+      cta_text:     "Je Commande",
+      cta_color:    "#f97316",
+      urgency_text: "Offre limitee - livraison gratuite aujourd'hui seulement",
     },
   }
 }
+
 function makeBeforeAfter(order: number): LandingSection {
   return {
     type: "before_after", enabled: true, order,
-    data: { before_image: "", after_image: "", caption: "RÃ©sultats avant / aprÃ¨s" },
+    data: { before_image: "", after_image: "", caption: "Resultats avant / apres" },
   }
 }
 
@@ -107,15 +118,15 @@ const TEMPLATE_SECTIONS: Record<string, LandingSection[]> = {
   ],
 }
 
-// â”€â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET ──────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorise" }, { status: 401 })
 
   const sp        = req.nextUrl.searchParams
   const productId = sp.get("productId") ?? undefined
-  const status    = sp.get("status") ?? undefined   // "active" | "draft"
+  const status    = sp.get("status") ?? undefined
 
   const monthStart = new Date()
   monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
@@ -137,7 +148,6 @@ export async function GET(req: NextRequest) {
     },
   })
 
-  // Compute conversion %: confirmed orders / total orders
   const stats = await Promise.all(
     pages.map(async (lp) => {
       const [total, confirmed] = await Promise.all([
@@ -145,10 +155,10 @@ export async function GET(req: NextRequest) {
         prisma.order.count({ where: { landingPageId: lp.id, status: "CONFIRME" } }),
       ])
       return {
-        id:          lp.id,
-        totalOrders: total,
-        confirmedOrders: confirmed,
-        conversionPct: total > 0 ? Math.round((confirmed / total) * 100) : 0,
+        id:             lp.id,
+        totalOrders:    total,
+        confirmedOrders:confirmed,
+        conversionPct:  total > 0 ? Math.round((confirmed / total) * 100) : 0,
       }
     }),
   )
@@ -163,21 +173,21 @@ export async function GET(req: NextRequest) {
   )
 }
 
-// â”€â”€â”€ Zod schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Zod schema ───────────────────────────────────────────────────────────────
 
 const createSchema = z.object({
   productId: z.string().cuid("Produit invalide"),
-  template:  z.enum(["PROBLEM_SOLUTION","GADGET_DEMO","BEFORE_AFTER","BUNDLE","VIRAL"]),
+  template:  z.enum(["PROBLEM_SOLUTION", "GADGET_DEMO", "BEFORE_AFTER", "BUNDLE", "VIRAL"]),
   slug:      z.string().min(1).max(80).optional(),
   metaTitle: z.string().max(160).optional().nullable(),
   metaDesc:  z.string().max(320).optional().nullable(),
 })
 
-// â”€â”€â”€ POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const session = await getAdminSession()
-  if (!session?.user) return NextResponse.json({ error: "Non autorisÃ©" }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: "Non autorise" }, { status: 401 })
 
   let raw: unknown
   try { raw = await req.json() } catch {
@@ -197,10 +207,7 @@ export async function POST(req: NextRequest) {
   })
   if (!product) return NextResponse.json({ error: "Produit introuvable" }, { status: 404 })
 
-  // Slug: use provided or fall back to product slug
   const baseSlug = rawSlug ? generateSlug(rawSlug) : product.slug
-
-  // Unique across landing_pages table
   let candidateSlug = baseSlug
   let suffix = 2
   while (true) {
