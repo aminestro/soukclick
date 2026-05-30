@@ -178,9 +178,11 @@ export async function GET(req: NextRequest) {
 const createSchema = z.object({
   productId: z.string().cuid("Produit invalide"),
   template:  z.enum(["PROBLEM_SOLUTION", "GADGET_DEMO", "BEFORE_AFTER", "BUNDLE", "VIRAL"]),
+  language:  z.enum(["fr", "darija", "ar"]).default("fr"),
   slug:      z.string().min(1).max(80).optional(),
   metaTitle: z.string().max(160).optional().nullable(),
   metaDesc:  z.string().max(320).optional().nullable(),
+  sections:  z.array(z.record(z.unknown())).optional(), // AI-generated sections override
 })
 
 // ─── POST ─────────────────────────────────────────────────────────────────────
@@ -199,7 +201,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.errors[0]?.message }, { status: 422 })
   }
 
-  const { productId, template, slug: rawSlug, metaTitle, metaDesc } = parsed.data
+  const { productId, template, language, slug: rawSlug, metaTitle, metaDesc, sections: aiSections } = parsed.data
 
   const product = await prisma.product.findUnique({
     where:  { id: productId },
@@ -218,13 +220,15 @@ export async function POST(req: NextRequest) {
     candidateSlug = `${baseSlug}-${suffix++}`
   }
 
-  const sections = TEMPLATE_SECTIONS[template] ?? TEMPLATE_SECTIONS["GADGET_DEMO"]!
+  // Use AI-generated sections if provided, otherwise fall back to template defaults
+  const sections = aiSections ?? (TEMPLATE_SECTIONS[template] ?? TEMPLATE_SECTIONS["GADGET_DEMO"]!)
 
   const lp = await prisma.landingPage.create({
     data: {
       productId,
       slug:      candidateSlug,
       template,
+      language,
       sections:  sections as object[],
       isActive:  false,
       metaTitle: metaTitle ?? product.titleFr,
