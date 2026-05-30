@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, ExternalLink } from "lucide-react"
 import { prisma } from "@/lib/prisma"
@@ -33,8 +33,9 @@ export default async function EditProductPage({ params }: PageProps) {
       },
     })
   } catch (err) {
-    console.error("[EditProductPage] DB error:", err)
-    redirect("/admin/products?error=db")
+    // Log the real error — most common cause: DB schema out of sync (run: docker exec soukclick_app npx prisma db push)
+    console.error("[EditProductPage] DB error — schema may need migration:", err)
+    throw err  // Let Next.js error boundary handle it with the real message
   }
 
   if (!product) notFound()
