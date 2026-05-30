@@ -3,13 +3,20 @@ import type { ReviewsData } from "@/types/landing"
 import type { Review } from "@prisma/client"
 
 interface ReviewsProps {
-  data:    ReviewsData
-  reviews: Review[]
+  data:      ReviewsData
+  reviews:   Review[]
+  language?: string
+}
+
+const LABELS: Record<string, { verified: string; reviews: string }> = {
+  fr:     { verified: "Vérifié",          reviews: "avis"       },
+  darija: { verified: "مشتري حقيقي",      reviews: "تعليق"      },
+  ar:     { verified: "مشترٍ موثَّق",     reviews: "تقييم"      },
 }
 
 function StarRating({ rating }: { rating: number }) {
   return (
-    <div className="flex items-center gap-0.5" aria-label={`${rating} étoiles sur 5`}>
+    <div className="flex items-center gap-0.5" aria-label={`${rating} / 5`}>
       {Array.from({ length: 5 }).map((_, i) => (
         <svg
           key={i}
@@ -24,12 +31,16 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
-export function Reviews({ data, reviews }: ReviewsProps) {
+export function Reviews({ data, reviews, language = "fr" }: ReviewsProps) {
   if (reviews.length === 0) return null
+
+  const labels = LABELS[language] ?? LABELS.fr!
+  const avgRating = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
 
   return (
     <section className="bg-gray-50 py-10 px-4">
       <div className="mx-auto max-w-3xl">
+
         {data.title && (
           <h2 className="mb-2 text-center text-xl font-bold text-gray-900 md:text-2xl">
             {data.title}
@@ -38,14 +49,9 @@ export function Reviews({ data, reviews }: ReviewsProps) {
 
         {/* Aggregate rating */}
         <div className="mb-8 flex items-center justify-center gap-2">
-          <StarRating
-            rating={Math.round(
-              reviews.reduce((s, r) => s + r.rating, 0) / reviews.length,
-            )}
-          />
+          <StarRating rating={Math.round(avgRating)} />
           <span className="text-sm text-gray-500">
-            {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)} / 5
-            &nbsp;({reviews.length} avis)
+            {avgRating.toFixed(1)} / 5 &nbsp;({reviews.length} {labels.reviews})
           </span>
         </div>
 
@@ -71,7 +77,7 @@ export function Reviews({ data, reviews }: ReviewsProps) {
                             clipRule="evenodd"
                           />
                         </svg>
-                        Vérifié
+                        {labels.verified}
                       </span>
                     )}
                   </div>
@@ -92,7 +98,7 @@ export function Reviews({ data, reviews }: ReviewsProps) {
                 <div className="mt-3 relative h-40 w-full overflow-hidden rounded-xl bg-gray-100">
                   <Image
                     src={review.imageUrl}
-                    alt={`Avis de ${review.authorName}`}
+                    alt={`${review.authorName}`}
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover"

@@ -19,20 +19,16 @@ interface SectionRendererProps {
     reviews:      Review[]
     offers:       Offer[]
   }
-  // "fr" (default) | "darija" | "ar" — controls dir/lang on the wrapper
   language?: string
 }
 
 export function SectionRenderer({ sections, product, language = "fr" }: SectionRendererProps) {
-  const isRtl    = language === "ar" || language === "darija"
-  const langAttr = isRtl ? "ar" : "fr"
-
   const orderedEnabled = [...sections]
     .filter((s) => s.enabled)
     .sort((a, b) => a.order - b.order)
 
   return (
-    <div dir={isRtl ? "rtl" : "ltr"} lang={langAttr}>
+    <>
       {orderedEnabled.map((section, idx) => {
         switch (section.type) {
           case "hero":
@@ -46,6 +42,8 @@ export function SectionRenderer({ sections, product, language = "fr" }: SectionR
                   comparePrice: product.comparePrice,
                   images:       product.images,
                 }}
+                offers={product.offers}
+                language={language}
               />
             )
 
@@ -63,11 +61,10 @@ export function SectionRenderer({ sections, product, language = "fr" }: SectionR
               <Reviews
                 key={idx}
                 data={section.data}
+                language={language}
                 reviews={
                   section.data.review_ids.length > 0
-                    ? product.reviews.filter((r) =>
-                        section.data.review_ids.includes(r.id),
-                      )
+                    ? product.reviews.filter((r) => section.data.review_ids.includes(r.id))
                     : product.reviews
                 }
               />
@@ -77,7 +74,7 @@ export function SectionRenderer({ sections, product, language = "fr" }: SectionR
             return <FAQ key={idx} data={section.data} />
 
           case "before_after":
-            return <BeforeAfter key={idx} data={section.data} />
+            return <BeforeAfter key={idx} data={section.data} language={language} />
 
           case "cta":
             return <CTA key={idx} data={section.data} />
@@ -86,6 +83,6 @@ export function SectionRenderer({ sections, product, language = "fr" }: SectionR
             return null
         }
       })}
-    </div>
+    </>
   )
 }

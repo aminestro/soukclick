@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -12,16 +12,144 @@ import { getStoredClickIds, firePixelEvent, fireTikTokEvent, fireGA4Event } from
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const orderSchema = z.object({
-  customer_name: z.string().min(3, "Nom requis (min. 3 caractères)"),
-  phone: z
-    .string()
-    .regex(/^(05|06|07)\d{8}$/, "Numéro invalide — ex: 0612345678"),
-  city_id:  z.string().min(1, "Veuillez choisir votre ville"),
-  address:  z.string().min(5, "Adresse requise (min. 5 caractères)"),
-  quantity: z.number().int().min(1).max(10),
+  customer_name: z.string().min(3),
+  phone:         z.string().regex(/^(05|06|07)\d{8}$/),
+  city_id:       z.string().min(1),
+  address:       z.string().min(5),
+  quantity:      z.number().int().min(1).max(10),
 })
 
 type OrderFormValues = z.infer<typeof orderSchema>
+
+// ─── Translations ─────────────────────────────────────────────────────────────
+
+const T = {
+  fr: {
+    orderTitle:      "🛒 Commander Maintenant",
+    orderSubtitle:   "Remplissez le formulaire ci-dessous",
+    chooseOffer:     "Choisissez votre offre",
+    quantity:        "Quantité",
+    fullName:        "Nom complet",
+    namePlaceholder: "Ex: Mohamed Alami",
+    phone:           "Téléphone",
+    city:            "Ville",
+    cityPlaceholder: "Choisissez votre ville…",
+    citySearch:      "Rechercher une ville…",
+    cityNotFound:    "Aucune ville trouvée",
+    address:         "Adresse complète",
+    addrPlaceholder: "Quartier, rue, numéro d'appartement…",
+    delivery:        "Livraison",
+    freeDelivery:    "Gratuite 🎁",
+    productLine:     "Produit",
+    total:           "Total à payer",
+    savings:         "Vous économisez",
+    sending:         "Envoi en cours…",
+    sent:            "Commande envoyée !",
+    confirm:         "✅ Confirmer ma commande",
+    trust1:          "Paiement uniquement à la livraison — aucun prépaiement",
+    trust2:          "Livraison en 24-72h partout au Maroc",
+    trust3:          "Retour gratuit si vous n'êtes pas satisfait",
+    legal:           "En commandant, vous acceptez d'être contacté pour confirmer votre commande.",
+    stickyTotal:     "Total estimé",
+    stickyBtn:       "Commander →",
+    freeShipping:    "🎁 Livraison gratuite",
+    distant:         "DISTANT",
+    deliveryEst:     "Livraison estimée :",
+    days:            "j",
+    remoteZone:      "Zone distante",
+    mostChosen:      "⭐ Le plus choisi",
+    economy:         "ÉCONOMIE",
+    secureMsg:       "🔒 Sécurisé",
+    codMsg:          "🚚 Paiement à la livraison",
+    officialMsg:     "✅ Site officiel",
+    whatsapp:        "Bonjour, je voudrais commander",
+    plusDelivery:    "+ livraison",
+  },
+  darija: {
+    orderTitle:      "🛒 اطلب دابا",
+    orderSubtitle:   "عمر البيانات ديالك هنا",
+    chooseOffer:     "اختار العرض ديالك",
+    quantity:        "الكمية",
+    fullName:        "الاسم الكامل",
+    namePlaceholder: "مثلاً: محمد علمي",
+    phone:           "رقم الهاتف",
+    city:            "المدينة",
+    cityPlaceholder: "اختار المدينة ديالك…",
+    citySearch:      "قلب على مدينة…",
+    cityNotFound:    "ما لقيناش المدينة",
+    address:         "العنوان",
+    addrPlaceholder: "الحي، الزنقة، رقم الدار…",
+    delivery:        "التوصيل",
+    freeDelivery:    "مجاني 🎁",
+    productLine:     "المنتج",
+    total:           "المجموع",
+    savings:         "كنوفر",
+    sending:         "كيتصفط…",
+    sent:            "تصفط الطلب!",
+    confirm:         "✅ أكد الطلب ديالك",
+    trust1:          "الدفع عند الاستلام — بلا دفع مسبق",
+    trust2:          "التوصيل في 24-72 ساعة في جميع أنحاء المغرب",
+    trust3:          "إرجاع مجاني إلا ما رضيتيش",
+    legal:           "بالطلب، قبلتي باش نتواصلو معك لتأكيد الطلب.",
+    stickyTotal:     "المجموع",
+    stickyBtn:       "اطلب دابا ←",
+    freeShipping:    "🎁 التوصيل مجاني",
+    distant:         "بعيد",
+    deliveryEst:     "التوصيل المتوقع:",
+    days:            "أيام",
+    remoteZone:      "منطقة بعيدة",
+    mostChosen:      "⭐ الأكثر اختياراً",
+    economy:         "توفير",
+    secureMsg:       "🔒 مأمون",
+    codMsg:          "🚚 الدفع عند الاستلام",
+    officialMsg:     "✅ الموقع الرسمي",
+    whatsapp:        "السلام عليكم، بغيت نطلب",
+    plusDelivery:    "+ التوصيل",
+  },
+  ar: {
+    orderTitle:      "🛒 اطلب الآن",
+    orderSubtitle:   "أدخل بياناتك أدناه",
+    chooseOffer:     "اختر عرضك",
+    quantity:        "الكمية",
+    fullName:        "الاسم الكامل",
+    namePlaceholder: "مثال: محمد العلمي",
+    phone:           "رقم الهاتف",
+    city:            "المدينة",
+    cityPlaceholder: "اختر مدينتك…",
+    citySearch:      "ابحث عن مدينة…",
+    cityNotFound:    "لم يتم العثور على المدينة",
+    address:         "العنوان الكامل",
+    addrPlaceholder: "الحي، الشارع، رقم المنزل…",
+    delivery:        "التوصيل",
+    freeDelivery:    "مجاني 🎁",
+    productLine:     "المنتج",
+    total:           "المجموع الكلي",
+    savings:         "توفرت",
+    sending:         "جارٍ الإرسال…",
+    sent:            "تم إرسال الطلب!",
+    confirm:         "✅ تأكيد الطلب",
+    trust1:          "الدفع عند الاستلام — بدون دفع مسبق",
+    trust2:          "التوصيل خلال 24-72 ساعة في جميع أنحاء المغرب",
+    trust3:          "إرجاع مجاني في حالة عدم الرضا",
+    legal:           "بالطلب، تقبل التواصل معك لتأكيد طلبك.",
+    stickyTotal:     "المجموع",
+    stickyBtn:       "اطلب الآن ←",
+    freeShipping:    "🎁 توصيل مجاني",
+    distant:         "بعيد",
+    deliveryEst:     "موعد التسليم المتوقع:",
+    days:            "أيام",
+    remoteZone:      "منطقة نائية",
+    mostChosen:      "⭐ الأكثر اختياراً",
+    economy:         "توفير",
+    secureMsg:       "🔒 آمن",
+    codMsg:          "🚚 الدفع عند الاستلام",
+    officialMsg:     "✅ الموقع الرسمي",
+    whatsapp:        "السلام عليكم، أرغب في طلب",
+    plusDelivery:    "+ التوصيل",
+  },
+} as const
+
+type Lang = keyof typeof T
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -38,6 +166,7 @@ interface OrderFormProps {
   offers:        Offer[]
   cities:        City[]
   landingPageId: string
+  language?:     string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -67,20 +196,17 @@ function discountPct(base: number, unit: number): number {
 // ─── City selector ────────────────────────────────────────────────────────────
 
 function CitySelector({
-  cities,
-  value,
-  onChange,
-  freeShip,
-  error,
+  cities, value, onChange, freeShip, error, t,
 }: {
   cities:   City[]
   value:    string
   onChange: (id: string) => void
   freeShip: boolean
   error?:   string
+  t:        typeof T[Lang]
 }) {
-  const [search,  setSearch]  = useState("")
-  const [open,    setOpen]    = useState(false)
+  const [search,       setSearch]  = useState("")
+  const [open,         setOpen]    = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef     = useRef<HTMLInputElement>(null)
 
@@ -111,17 +237,11 @@ function CitySelector({
     setSearch("")
   }
 
-  function openDropdown() {
-    setOpen(true)
-    setTimeout(() => inputRef.current?.focus(), 10)
-  }
-
   return (
     <div ref={containerRef} className="relative">
-      {/* Trigger */}
       <button
         type="button"
-        onClick={openDropdown}
+        onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 10) }}
         className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all focus:outline-none focus:ring-2 focus:ring-orange-400 ${
           error
             ? "border-red-400 bg-red-50"
@@ -136,11 +256,11 @@ function CitySelector({
             <span className="flex items-center justify-between">
               <span>{selectedCity.nameFr}</span>
               <span className="text-xs font-semibold text-orange-600">
-                {freeShip ? "Gratuite 🎁" : formatMAD(selectedCity.deliveryPrice)}
+                {freeShip ? t.freeDelivery : formatMAD(selectedCity.deliveryPrice)}
               </span>
             </span>
           ) : (
-            "Choisissez votre ville…"
+            t.cityPlaceholder
           )}
         </span>
         <svg className={`h-4 w-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -148,24 +268,21 @@ function CitySelector({
         </svg>
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl shadow-black/15">
-          {/* Search */}
           <div className="border-b border-gray-100 p-2">
             <input
               ref={inputRef}
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher une ville…"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-200"
+              placeholder={t.citySearch}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-orange-400"
             />
           </div>
-          {/* List */}
           <div className="max-h-56 overflow-y-auto overscroll-contain">
             {filtered.length === 0 ? (
-              <p className="py-6 text-center text-sm text-gray-400">Aucune ville trouvée</p>
+              <p className="py-6 text-center text-sm text-gray-400">{t.cityNotFound}</p>
             ) : (
               filtered.map((city) => (
                 <button
@@ -180,16 +297,16 @@ function CitySelector({
                     {city.nameFr}
                     {city.isRemote && (
                       <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
-                        DISTANT
+                        {t.distant}
                       </span>
                     )}
                   </span>
                   <span className="flex flex-col items-end gap-0.5">
                     <span className={`text-xs font-semibold ${freeShip ? "text-green-600" : "text-orange-600"}`}>
-                      {freeShip ? "Gratuite 🎁" : formatMAD(city.deliveryPrice)}
+                      {freeShip ? t.freeDelivery : formatMAD(city.deliveryPrice)}
                     </span>
                     <span className="text-[10px] text-gray-400">
-                      {city.deliveryDays}j
+                      {city.deliveryDays}{t.days}
                     </span>
                   </span>
                 </button>
@@ -199,14 +316,13 @@ function CitySelector({
         </div>
       )}
 
-      {/* Delivery info below */}
       {selectedCity && !open && (
         <p className="mt-1.5 flex items-center gap-1 text-[11px] text-gray-500">
           <span>🕐</span>
-          Livraison estimée : {selectedCity.deliveryDays} jour{selectedCity.deliveryDays > 1 ? "s" : ""}
+          {t.deliveryEst} {selectedCity.deliveryDays} {t.days}
           {selectedCity.isRemote && (
             <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
-              Zone distante
+              {t.remoteZone}
             </span>
           )}
         </p>
@@ -217,17 +333,20 @@ function CitySelector({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function OrderForm({ product, offers, cities, landingPageId }: OrderFormProps) {
+export function OrderForm({ product, offers, cities, landingPageId, language = "fr" }: OrderFormProps) {
   const router = useRouter()
+  const lang   = (language in T ? language : "fr") as Lang
+  const t      = T[lang]
+  const isRtl  = lang === "darija" || lang === "ar"
 
-  const [qty,          setQty]          = useState(() => {
+  const [qty,           setQty]           = useState(() => {
     const first = offers.filter((o) => o.isActive).sort((a, b) => a.minQuantity - b.minQuantity)[0]
     return first?.minQuantity ?? 1
   })
-  const [loading,      setLoading]      = useState(false)
-  const [submitted,    setSubmitted]    = useState(false)
-  const [phoneDisplay, setPhoneDisplay] = useState("")
-  const [shaking,      setShaking]      = useState(false)
+  const [loading,       setLoading]       = useState(false)
+  const [submitted,     setSubmitted]     = useState(false)
+  const [phoneDisplay,  setPhoneDisplay]  = useState("")
+  const [shaking,       setShaking]       = useState(false)
   const [stickyVisible, setStickyVisible] = useState(false)
 
   const submitBtnRef = useRef<HTMLButtonElement>(null)
@@ -238,7 +357,6 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
     [offers],
   )
 
-  // Sticky CTA visibility — hide when submit button is in viewport
   useEffect(() => {
     if (!submitBtnRef.current) return
     const observer = new IntersectionObserver(
@@ -268,19 +386,16 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
   const total        = unitPrice * qty + deliveryFee
   const savings      = (product.price - unitPrice) * qty
 
-  // ── Phone formatting ──────────────────────────────────────────────────────
-
   function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw       = e.target.value.replace(/\D/g, "").slice(0, 10)
-    const formatted = raw.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5")
-                        .replace(/(\d{2})(\d{2})(\d{2})(\d{2})$/, "$1 $2 $3 $4")
-                        .replace(/(\d{2})(\d{2})(\d{2})$/, "$1 $2 $3")
-                        .replace(/(\d{2})(\d{2})$/, "$1 $2")
+    const formatted = raw
+      .replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5")
+      .replace(/(\d{2})(\d{2})(\d{2})(\d{2})$/, "$1 $2 $3 $4")
+      .replace(/(\d{2})(\d{2})(\d{2})$/, "$1 $2 $3")
+      .replace(/(\d{2})(\d{2})$/, "$1 $2")
     setPhoneDisplay(formatted)
     setValue("phone", raw, { shouldValidate: raw.length === 10 })
   }
-
-  // ── Quantity / offer selection ─────────────────────────────────────────────
 
   function handleQtyChange(newQty: number) {
     if (newQty < 1 || newQty > 10) return
@@ -295,8 +410,6 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
     })
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────
-
   function triggerShake() {
     setShaking(true)
     setTimeout(() => setShaking(false), 500)
@@ -304,24 +417,16 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
 
   async function onSubmit(values: OrderFormValues) {
     setLoading(true)
-
-    firePixelEvent("InitiateCheckout", {
-      contentIds:  [product.id],
-      contentName: product.titleFr,
-      value:       total / 100,
-      currency:    "MAD",
-      numItems:    qty,
-    })
-    fireTikTokEvent("InitiateCheckout", { value: total / 100, currency: "MAD" })
-    fireGA4Event("begin_checkout",      { value: total / 100, currency: "MAD" })
+    firePixelEvent("InitiateCheckout", { contentIds: [product.id], contentName: product.titleFr, value: total / 100, currency: "MAD", numItems: qty })
+    fireTikTokEvent("InitiateCheckout",  { value: total / 100, currency: "MAD" })
+    fireGA4Event("begin_checkout",       { value: total / 100, currency: "MAD" })
 
     const clickIds = getStoredClickIds()
-
     try {
       const res = await fetch("/api/orders", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body:    JSON.stringify({
           ...values,
           quantity:        qty,
           product_id:      product.id,
@@ -329,98 +434,73 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
           ...clickIds,
         }),
       })
-
       const body = await res.json() as { orderId?: string; orderNumber?: string; error?: string }
-
       if (!res.ok) {
-        toast.error(body.error ?? "Une erreur est survenue. Réessayez.")
+        toast.error(body.error ?? "Une erreur est survenue.")
         setLoading(false)
         return
       }
-
-      firePixelEvent("Lead", {
-        contentIds:  [product.id],
-        contentName: product.titleFr,
-        value:       total / 100,
-        currency:    "MAD",
-      })
-
+      firePixelEvent("Lead", { contentIds: [product.id], contentName: product.titleFr, value: total / 100, currency: "MAD" })
       setSubmitted(true)
       setTimeout(() => router.push(`/merci/${body.orderId}`), 600)
     } catch {
-      toast.error("Erreur réseau. Vérifiez votre connexion et réessayez.")
+      toast.error("Erreur réseau.")
       setLoading(false)
     }
-  }
-
-  function onInvalid() {
-    triggerShake()
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* Shake + pulse animations */}
       <style>{`
         @keyframes shake {
-          0%,100% { transform: translateX(0) }
-          15%     { transform: translateX(-6px) }
-          30%     { transform: translateX(6px) }
-          45%     { transform: translateX(-4px) }
-          60%     { transform: translateX(4px) }
-          75%     { transform: translateX(-2px) }
-          90%     { transform: translateX(2px) }
+          0%,100%{ transform:translateX(0) }
+          15%    { transform:translateX(-6px) }
+          30%    { transform:translateX(6px) }
+          45%    { transform:translateX(-4px) }
+          60%    { transform:translateX(4px) }
+          75%    { transform:translateX(-2px) }
+          90%    { transform:translateX(2px) }
         }
         .form-shake { animation: shake 0.45s ease }
         @keyframes pulse-cta {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.45) }
-          60%      { box-shadow: 0 0 0 14px rgba(249,115,22,0) }
+          0%,100%{ box-shadow: 0 0 0 0 rgba(249,115,22,.45) }
+          60%    { box-shadow: 0 0 0 14px rgba(249,115,22,0) }
         }
         .pulse-cta { animation: pulse-cta 2.2s ease infinite }
       `}</style>
 
       <form
         ref={formRef}
-        onSubmit={handleSubmit(onSubmit, onInvalid)}
+        onSubmit={handleSubmit(onSubmit, () => triggerShake())}
         className={`space-y-5 ${shaking ? "form-shake" : ""}`}
+        dir={isRtl ? "rtl" : "ltr"}
         noValidate
       >
-        {/* ── Header ────────────────────────────────────────────────────────── */}
+        {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white px-5 py-4">
-          <h2 className="text-xl font-extrabold text-gray-900">
-            🛒 Commander Maintenant
-          </h2>
-          <p className="mt-0.5 text-sm text-gray-500">
-            Remplissez le formulaire ci-dessous
-          </p>
-          {/* Trust row */}
+          <h2 className="text-xl font-extrabold text-gray-900">{t.orderTitle}</h2>
+          <p className="mt-0.5 text-sm text-gray-500">{t.orderSubtitle}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            {[
-              { icon: "🔒", text: "Sécurisé" },
-              { icon: "🚚", text: "Paiement à la livraison" },
-              { icon: "✅", text: "Site officiel" },
-            ].map(({ icon, text }) => (
-              <span key={text} className="flex items-center gap-1 text-[11px] font-semibold text-gray-600">
-                <span>{icon}</span>
-                <span>{text}</span>
+            {[t.secureMsg, t.codMsg, t.officialMsg].map((msg) => (
+              <span key={msg} className="flex items-center gap-1 text-[11px] font-semibold text-gray-600">
+                {msg}
               </span>
             ))}
           </div>
         </div>
 
-        {/* ── Offer cards ───────────────────────────────────────────────────── */}
+        {/* ── Offer cards ─────────────────────────────────────────────────── */}
         {activeOffers.length > 0 && (
           <div>
-            <p className="mb-2.5 text-[13px] font-bold text-gray-700">
-              Choisissez votre offre
-            </p>
+            <p className="mb-2.5 text-[13px] font-bold text-gray-700">{t.chooseOffer}</p>
             <div className="space-y-2.5">
               {activeOffers.map((offer, idx) => {
-                const offerUnit   = computeUnitPrice(product.price, offers, offer.minQuantity)
-                const pct         = discountPct(product.price, offerUnit)
-                const active      = qty === offer.minQuantity
-                const isMostPop   = idx === Math.min(1, activeOffers.length - 1)
+                const offerUnit = computeUnitPrice(product.price, offers, offer.minQuantity)
+                const pct       = discountPct(product.price, offerUnit)
+                const active    = qty === offer.minQuantity
+                const isMostPop = idx === Math.min(1, activeOffers.length - 1) && activeOffers.length > 1
 
                 return (
                   <button
@@ -433,17 +513,13 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
                         : "border-gray-200 bg-white hover:border-orange-300 hover:shadow-sm"
                     }`}
                   >
-                    {/* Most popular badge */}
-                    {isMostPop && activeOffers.length > 1 && (
-                      <span className="absolute -top-2.5 left-4 rounded-full bg-orange-500 px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
-                        ⭐ Le plus choisi
+                    {isMostPop && (
+                      <span className={`absolute -top-2.5 ${isRtl ? "right-4" : "left-4"} rounded-full bg-orange-500 px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm`}>
+                        {t.mostChosen}
                       </span>
                     )}
-
                     <div className="flex items-center justify-between gap-3">
-                      {/* Left: quantity + label */}
                       <div className="flex items-center gap-3">
-                        {/* Qty badge */}
                         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold transition-colors ${
                           active ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700"
                         }`}>
@@ -454,14 +530,10 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
                             {offer.labelFr}
                           </p>
                           {offer.freeShipping && (
-                            <p className="text-[11px] font-semibold text-green-600">
-                              🎁 Livraison gratuite
-                            </p>
+                            <p className="text-[11px] font-semibold text-green-600">{t.freeShipping}</p>
                           )}
                         </div>
                       </div>
-
-                      {/* Right: price + discount */}
                       <div className="flex items-center gap-2">
                         {pct > 0 && (
                           <span className="rounded-lg bg-red-500 px-2 py-0.5 text-[10px] font-extrabold text-white">
@@ -480,10 +552,8 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
                         </div>
                       </div>
                     </div>
-
-                    {/* Checkmark */}
                     {active && (
-                      <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm">
+                      <div className={`absolute ${isRtl ? "left-3" : "right-3"} top-3 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm`}>
                         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
@@ -499,48 +569,34 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
         {/* Simple stepper when no offers */}
         {activeOffers.length === 0 && (
           <div>
-            <p className="mb-2 text-[13px] font-bold text-gray-700">Quantité</p>
+            <p className="mb-2 text-[13px] font-bold text-gray-700">{t.quantity}</p>
             <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => handleQtyChange(qty - 1)}
-                disabled={qty <= 1}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-gray-200 text-xl font-bold text-gray-700 transition hover:border-orange-400 hover:text-orange-600 disabled:opacity-30"
-              >
+              <button type="button" onClick={() => handleQtyChange(qty - 1)} disabled={qty <= 1}
+                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-gray-200 text-xl font-bold text-gray-700 hover:border-orange-400 hover:text-orange-600 disabled:opacity-30">
                 −
               </button>
-              <span className="w-10 text-center text-xl font-bold tabular-nums text-gray-900">
-                {qty}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleQtyChange(qty + 1)}
-                disabled={qty >= 10}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-gray-200 text-xl font-bold text-gray-700 transition hover:border-orange-400 hover:text-orange-600 disabled:opacity-30"
-              >
+              <span className="w-10 text-center text-xl font-bold tabular-nums text-gray-900">{qty}</span>
+              <button type="button" onClick={() => handleQtyChange(qty + 1)} disabled={qty >= 10}
+                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-gray-200 text-xl font-bold text-gray-700 hover:border-orange-400 hover:text-orange-600 disabled:opacity-30">
                 +
               </button>
-              <span className="text-sm text-gray-500 tabular-nums">
-                {formatMAD(unitPrice * qty)}
-              </span>
+              <span className="text-sm text-gray-500 tabular-nums">{formatMAD(unitPrice * qty)}</span>
             </div>
           </div>
         )}
 
-        {/* ── Name ──────────────────────────────────────────────────────────── */}
+        {/* ── Name ────────────────────────────────────────────────────────── */}
         <div>
           <label htmlFor="customer_name" className="mb-1.5 block text-[13px] font-bold text-gray-700">
-            Nom complet <span className="text-red-500">*</span>
+            {t.fullName} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-lg">
-              👤
-            </span>
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-lg">👤</span>
             <input
               id="customer_name"
               type="text"
               autoComplete="name"
-              placeholder="Ex: Mohamed Alami"
+              placeholder={t.namePlaceholder}
               {...register("customer_name")}
               className={`w-full rounded-xl border py-3.5 pl-11 pr-4 text-sm outline-none transition-all focus:ring-2 focus:ring-orange-400 ${
                 errors.customer_name
@@ -556,15 +612,15 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
           )}
         </div>
 
-        {/* ── Phone ─────────────────────────────────────────────────────────── */}
+        {/* ── Phone ───────────────────────────────────────────────────────── */}
         <div>
           <label htmlFor="phone" className="mb-1.5 block text-[13px] font-bold text-gray-700">
-            Téléphone <span className="text-red-500">*</span>
+            {t.phone} <span className="text-red-500">*</span>
           </label>
-          <div className="relative flex overflow-hidden rounded-xl border transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:ring-offset-0"
+          <div
+            className="relative flex overflow-hidden rounded-xl border transition-all focus-within:ring-2 focus-within:ring-orange-400"
             style={{ borderColor: errors.phone ? "#f87171" : "#d1d5db" }}
           >
-            {/* +212 prefix */}
             <div className="flex shrink-0 items-center gap-1.5 border-r border-gray-200 bg-gray-50 px-3 text-sm font-semibold text-gray-500">
               <span className="text-base">📱</span>
               <span>+212</span>
@@ -577,9 +633,7 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
               placeholder="06 XX XX XX XX"
               value={phoneDisplay}
               onChange={handlePhoneChange}
-              className={`flex-1 py-3.5 pl-3 pr-4 text-sm outline-none ${
-                errors.phone ? "bg-red-50" : "bg-white"
-              }`}
+              className={`flex-1 py-3.5 pl-3 pr-4 text-sm outline-none ${errors.phone ? "bg-red-50" : "bg-white"}`}
             />
           </div>
           {errors.phone && (
@@ -589,16 +643,17 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
           )}
         </div>
 
-        {/* ── City ──────────────────────────────────────────────────────────── */}
+        {/* ── City ────────────────────────────────────────────────────────── */}
         <div>
           <label className="mb-1.5 block text-[13px] font-bold text-gray-700">
-            Ville <span className="text-red-500">*</span>
+            {t.city} <span className="text-red-500">*</span>
           </label>
           <CitySelector
             cities={cities}
             value={cityId ?? ""}
             freeShip={freeShip}
             error={errors.city_id?.message}
+            t={t}
             onChange={(id) => setValue("city_id", id, { shouldValidate: true })}
           />
           {errors.city_id && (
@@ -608,19 +663,17 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
           )}
         </div>
 
-        {/* ── Address ───────────────────────────────────────────────────────── */}
+        {/* ── Address ─────────────────────────────────────────────────────── */}
         <div>
           <label htmlFor="address" className="mb-1.5 block text-[13px] font-bold text-gray-700">
-            Adresse complète <span className="text-red-500">*</span>
+            {t.address} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <span className="pointer-events-none absolute left-3.5 top-3.5 text-lg">
-              📍
-            </span>
+            <span className="pointer-events-none absolute left-3.5 top-3.5 text-lg">📍</span>
             <textarea
               id="address"
               rows={2}
-              placeholder="Quartier, rue, numéro d'appartement…"
+              placeholder={t.addrPlaceholder}
               {...register("address")}
               className={`w-full resize-none rounded-xl border py-3 pl-11 pr-4 text-sm outline-none transition-all focus:ring-2 focus:ring-orange-400 ${
                 errors.address
@@ -636,52 +689,45 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
           )}
         </div>
 
-        {/* ── Price summary ─────────────────────────────────────────────────── */}
+        {/* ── Price summary ────────────────────────────────────────────────── */}
         <div className="rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 space-y-2.5">
-          {/* Savings badge */}
           {savings > 0 && (
             <div className="mb-1 flex items-center gap-2">
               <span className="rounded-full bg-green-500 px-2.5 py-0.5 text-[10px] font-extrabold text-white">
-                ÉCONOMIE
+                {t.economy}
               </span>
               <span className="text-[12px] font-bold text-green-700">
-                Vous économisez {formatMAD(savings)} !
+                {t.savings} {formatMAD(savings)} !
               </span>
             </div>
           )}
-
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">
-              Produit × {qty}
-            </span>
-            <span className="font-semibold text-gray-800 tabular-nums">
-              {formatMAD(unitPrice * qty)}
-            </span>
+            <span className="text-gray-600">{t.productLine} × {qty}</span>
+            <span className="font-semibold text-gray-800 tabular-nums">{formatMAD(unitPrice * qty)}</span>
           </div>
-
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Livraison</span>
+            <span className="text-gray-600">{t.delivery}</span>
             <span className={`font-semibold tabular-nums ${freeShip ? "text-green-600" : "text-gray-800"}`}>
               {freeShip
-                ? "Gratuite 🎁"
+                ? t.freeDelivery
                 : selectedCity
                 ? formatMAD(deliveryFee)
-                : <span className="text-gray-400">— choisissez une ville</span>
+                : <span className="text-gray-400">{t.plusDelivery}</span>
               }
             </span>
           </div>
-
           <div className="flex items-center justify-between border-t border-orange-200 pt-2.5">
-            <span className="text-base font-extrabold text-gray-900">Total à payer</span>
+            <span className="text-base font-extrabold text-gray-900">{t.total}</span>
             <span className="text-xl font-extrabold tabular-nums text-orange-600">
               {selectedCity
                 ? formatMAD(total)
-                : `${formatMAD(unitPrice * qty)} + livraison`}
+                : `${formatMAD(unitPrice * qty)} ${t.plusDelivery}`
+              }
             </span>
           </div>
         </div>
 
-        {/* ── Submit ────────────────────────────────────────────────────────── */}
+        {/* ── Submit ──────────────────────────────────────────────────────── */}
         <button
           ref={submitBtnRef}
           type="submit"
@@ -699,44 +745,38 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              Envoi en cours…
+              {t.sending}
             </span>
           ) : submitted ? (
             <span className="flex items-center gap-2">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
-              Commande envoyée !
+              {t.sent}
             </span>
           ) : (
-            "✅ Confirmer ma commande"
+            t.confirm
           )}
         </button>
 
-        {/* ── Trust footer ──────────────────────────────────────────────────── */}
+        {/* ── Trust footer ────────────────────────────────────────────────── */}
         <div className="space-y-1.5">
-          {[
-            { icon: "🔒", text: "Paiement uniquement à la livraison — aucun prépaiement" },
-            { icon: "🚚", text: "Livraison en 24-72h partout au Maroc" },
-            { icon: "↩️", text: "Retour gratuit si vous n'êtes pas satisfait" },
-          ].map(({ icon, text }) => (
+          {[t.trust1, t.trust2, t.trust3].map((text) => (
             <p key={text} className="flex items-start gap-2 text-[11px] text-gray-500">
-              <span className="shrink-0 leading-tight">{icon}</span>
+              <span className="shrink-0 leading-tight">•</span>
               <span>{text}</span>
             </p>
           ))}
         </div>
 
-        <p className="text-center text-[10px] text-gray-400">
-          En commandant, vous acceptez d&apos;être contacté pour confirmer votre commande.
-        </p>
+        <p className="text-center text-[10px] text-gray-400">{t.legal}</p>
 
-        {/* ── WhatsApp button ───────────────────────────────────────────────── */}
+        {/* ── WhatsApp float ───────────────────────────────────────────────── */}
         <a
-          href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? ""}?text=${encodeURIComponent("Bonjour, je voudrais commander " + product.titleFr)}`}
+          href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? ""}?text=${encodeURIComponent(t.whatsapp + " " + product.titleFr)}`}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Commander via WhatsApp"
+          aria-label="WhatsApp"
           className="fixed bottom-20 left-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 shadow-xl transition hover:bg-green-600 active:bg-green-700 md:bottom-6"
         >
           <svg viewBox="0 0 24 24" className="h-7 w-7 fill-white">
@@ -745,16 +785,16 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
         </a>
       </form>
 
-      {/* ── Sticky mobile CTA ─────────────────────────────────────────────────── */}
+      {/* ── Sticky mobile CTA ─────────────────────────────────────────────── */}
       <div
         className={`fixed bottom-0 left-0 right-0 z-50 md:hidden transition-all duration-300 ${
           stickyVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
         }`}
       >
-        <div className="border-t border-orange-200 bg-white px-4 pb-safe-4 pb-4 pt-3 shadow-2xl shadow-black/20">
+        <div className="border-t border-orange-200 bg-white px-4 pb-4 pt-3 shadow-2xl shadow-black/20">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] text-gray-400 leading-none">Total estimé</p>
+              <p className="text-[10px] text-gray-400 leading-none">{t.stickyTotal}</p>
               <p className="text-lg font-extrabold tabular-nums text-gray-900 leading-tight">
                 {selectedCity ? formatMAD(total) : formatMAD(unitPrice * qty)}
               </p>
@@ -767,7 +807,7 @@ export function OrderForm({ product, offers, cities, landingPageId }: OrderFormP
               }}
               className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 py-3.5 text-center text-sm font-extrabold text-white shadow-md shadow-orange-300 active:from-orange-700 active:to-orange-800"
             >
-              Commander →
+              {t.stickyBtn}
             </button>
           </div>
         </div>
