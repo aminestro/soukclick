@@ -6,6 +6,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import {
   ArrowLeft, ExternalLink, Copy, Save, Globe, EyeOff,
+  MoreHorizontal, Check, Pencil,
 } from "lucide-react"
 import { SectionsList }   from "@/components/admin/builder/SectionsList"
 import { SectionEditor }  from "@/components/admin/builder/SectionEditor"
@@ -25,22 +26,113 @@ interface LPData {
   template:  string
   sections:  LandingSection[]
   product: {
-    id:          string
-    titleFr:     string
-    price:       number
-    comparePrice:number | null
-    images:      string[]
-    reviews:     Array<{ id: string; authorName: string; authorCity: string | null; rating: number } & Review>
-    offers:      Offer[]
+    id:           string
+    titleFr:      string
+    price:        number
+    comparePrice: number | null
+    images:       string[]
+    reviews:      Array<{ id: string; authorName: string; authorCity: string | null; rating: number } & Review>
+    offers:       Offer[]
   }
+}
+
+// ─── Inline title editor ──────────────────────────────────────────────────────
+
+function EditableTitle({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft,   setDraft]   = useState(value)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function start() {
+    setDraft(value)
+    setEditing(true)
+    setTimeout(() => inputRef.current?.select(), 10)
+  }
+
+  function commit() {
+    if (draft.trim()) onSave(draft.trim())
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false) }}
+        className="rounded-lg border border-orange-400 bg-white px-2 py-1 text-sm font-semibold text-gray-900 outline-none ring-2 ring-orange-200 w-48"
+        autoFocus
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={start}
+      className="group flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-gray-800 hover:bg-gray-100 transition-colors"
+    >
+      <span className="truncate max-w-[160px]">{value}</span>
+      <Pencil className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </button>
+  )
+}
+
+// ─── More menu ────────────────────────────────────────────────────────────────
+
+function MoreMenu({ onCopyLink }: { onCopyLink: () => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function close(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", close)
+    return () => document.removeEventListener("mousedown", close)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-10 z-50 w-44 rounded-xl border border-gray-100 bg-white py-1.5 shadow-xl shadow-black/10">
+          <button
+            type="button"
+            onClick={() => { onCopyLink(); setOpen(false) }}
+            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-[13px] text-gray-700 hover:bg-gray-50"
+          >
+            <Copy className="h-3.5 w-3.5 text-gray-400" />
+            Copier le lien
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-[13px] text-gray-700 hover:bg-gray-50"
+          >
+            <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
+            Paramètres SEO
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function BuilderPage() {
-  const params  = useParams()
-  const router  = useRouter()
-  const id      = params.id as string
+  const params = useParams()
+  const router = useRouter()
+  const id     = params.id as string
 
   const [lpData,       setLpData]       = useState<LPData | null>(null)
   const [sections,     setSections]     = useState<LandingSection[]>([])
@@ -49,11 +141,10 @@ export default function BuilderPage() {
   const [saving,       setSaving]       = useState(false)
   const [dirty,        setDirty]        = useState(false)
   const [loading,      setLoading]      = useState(true)
-
-  // Track unsaved changes
+  const [pageTitle,    setPageTitle]    = useState("")
   const isDirty = useRef(false)
 
-  // ── Load data ──────────────────────────────────────────────────────────────
+  // ── Load ──────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     fetch(`/api/admin/landing-pages/${id}`)
@@ -62,7 +153,7 @@ export default function BuilderPage() {
         setLpData(d)
         setSections(d.sections ?? [])
         setIsActive(d.isActive)
-        // Auto-select first enabled section
+        setPageTitle(d.product.titleFr)
         const first = (d.sections ?? []).find((s) => s.enabled)
         if (first) setSelectedType(first.type)
         setLoading(false)
@@ -70,7 +161,7 @@ export default function BuilderPage() {
       .catch(() => { toast.error("Erreur de chargement"); router.push("/admin/landing-pages") })
   }, [id, router])
 
-  // ── Sections change ────────────────────────────────────────────────────────
+  // ── Sections ──────────────────────────────────────────────────────────────
 
   function handleSectionsChange(newSections: LandingSection[]) {
     setSections(newSections)
@@ -79,9 +170,7 @@ export default function BuilderPage() {
   }
 
   function handleSectionEdit(updated: LandingSection) {
-    setSections((prev) =>
-      prev.map((s) => s.type === updated.type ? updated : s),
-    )
+    setSections((prev) => prev.map((s) => s.type === updated.type ? updated : s))
     isDirty.current = true
     setDirty(true)
   }
@@ -98,7 +187,6 @@ export default function BuilderPage() {
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify(body),
     })
-
     if (res.ok) {
       const updated = await res.json() as { isActive: boolean }
       setIsActive(updated.isActive)
@@ -111,7 +199,6 @@ export default function BuilderPage() {
     setSaving(false)
   }, [id, sections])
 
-  // Keyboard save shortcut
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); save() }
@@ -141,14 +228,17 @@ export default function BuilderPage() {
     toast("🔗 Lien copié")
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center -m-6 bg-gray-100">
-        <div className="text-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-orange-500 border-t-transparent mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Chargement du builder…</p>
+      <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-[#F8F8F8]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 rounded-full border-4 border-gray-200" />
+            <div className="absolute inset-0 rounded-full border-4 border-orange-500 border-t-transparent animate-spin" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">Chargement du builder…</p>
         </div>
       </div>
     )
@@ -157,72 +247,67 @@ export default function BuilderPage() {
   if (!lpData) return null
 
   const selectedSection = sections.find((s) => s.type === selectedType) ?? null
-
-  const previewProduct = {
-    titleFr:     lpData.product.titleFr,
-    price:       lpData.product.price,
-    comparePrice:lpData.product.comparePrice,
-    images:      lpData.product.images,
-    reviews:     lpData.product.reviews as unknown as Review[],
-    offers:      lpData.product.offers,
+  const previewProduct  = {
+    titleFr:      lpData.product.titleFr,
+    price:        lpData.product.price,
+    comparePrice: lpData.product.comparePrice,
+    images:       lpData.product.images,
+    reviews:      lpData.product.reviews as unknown as Review[],
+    offers:       lpData.product.offers,
   }
 
   return (
-    // Full-screen builder — override admin shell padding
-    <div className="fixed inset-0 flex flex-col bg-white" style={{ zIndex: 40 }}>
+    <div className="fixed inset-0 flex flex-col bg-[#F8F8F8]" style={{ zIndex: 40 }}>
 
-      {/* ── Top bar ──────────────────────────────────────────────────────── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm">
+      {/* ── Top bar ─────────────────────────────────────────────────────────── */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+
         {/* Left */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 min-w-0">
           <Link
             href="/admin/landing-pages"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors shrink-0"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Landing Pages</span>
           </Link>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-mono text-gray-500">/{lpData.slug}</span>
-            <button
-              type="button"
-              onClick={copyLink}
-              className="rounded p-1 text-gray-400 hover:text-gray-700"
-              title="Copier le lien"
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          <div className="h-4 w-px bg-gray-200 shrink-0" />
+
+          <EditableTitle value={pageTitle} onSave={setPageTitle} />
+
+          <span className="hidden font-mono text-[11px] text-gray-400 sm:inline shrink-0">
+            /{lpData.slug}
+          </span>
 
           {dirty && (
-            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-600">
+            <span className="hidden shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600 sm:flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
               Non sauvegardé
             </span>
           )}
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-2">
-          {/* Active toggle */}
-          <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-1.5">
-            {isActive
-              ? <Globe className="h-3.5 w-3.5 text-green-600" />
-              : <EyeOff className="h-3.5 w-3.5 text-gray-400" />}
-            <span className="text-xs font-semibold text-gray-700 hidden sm:inline">
-              {isActive ? "Active" : "Brouillon"}
+        <div className="flex items-center gap-1.5">
+
+          {/* Status badge + toggle */}
+          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-1.5">
+            <div className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-green-500" : "bg-gray-400"}`} />
+            <span className="hidden text-[12px] font-medium text-gray-700 sm:inline">
+              {isActive ? "Actif" : "Brouillon"}
             </span>
             <Toggle checked={isActive} onChange={toggleActive} />
           </div>
 
-          {/* View page */}
+          {/* View */}
           <Link
             href={`/${lpData.slug}`}
             target="_blank"
-            className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Voir</span>
+            <span className="hidden sm:inline">Aperçu</span>
           </Link>
 
           {/* Save */}
@@ -230,33 +315,43 @@ export default function BuilderPage() {
             type="button"
             onClick={() => save()}
             disabled={saving || !dirty}
-            className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:pointer-events-none disabled:opacity-40"
             title="Ctrl+S"
           >
-            <Save className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Enregistrer</span>
+            {saving ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700" />
+            ) : dirty ? (
+              <Save className="h-3.5 w-3.5" />
+            ) : (
+              <Check className="h-3.5 w-3.5 text-green-500" />
+            )}
+            <span className="hidden sm:inline">{saving ? "Sauvegarde…" : "Enregistrer"}</span>
           </button>
 
           {/* Publish */}
-          {!isActive && (
-            <button
-              type="button"
-              onClick={() => save(true)}
-              disabled={saving}
-              className="flex items-center gap-1.5 rounded-xl bg-green-500 px-4 py-1.5 text-xs font-bold text-white hover:bg-green-600 disabled:opacity-60"
-            >
-              <Globe className="h-3.5 w-3.5" />
-              Publier
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => save(!isActive)}
+            disabled={saving}
+            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[12px] font-bold transition-all disabled:opacity-60 ${
+              isActive
+                ? "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                : "bg-orange-500 text-white shadow-sm shadow-orange-500/30 hover:bg-orange-600"
+            }`}
+          >
+            {isActive ? <EyeOff className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{isActive ? "Dépublier" : "Publier"}</span>
+          </button>
+
+          <MoreMenu onCopyLink={copyLink} />
         </div>
       </header>
 
-      {/* ── 3-column body ────────────────────────────────────────────────── */}
+      {/* ── 3-column body ───────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Left — sections list (260px) */}
-        <div className="w-[260px] shrink-0 border-r border-gray-200 bg-white overflow-hidden flex flex-col">
+        {/* Left — sections (280px) */}
+        <div className="w-[280px] shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden">
           <SectionsList
             sections={sections}
             selectedType={selectedType}
@@ -265,13 +360,13 @@ export default function BuilderPage() {
           />
         </div>
 
-        {/* Center — live preview (flex-1) */}
+        {/* Center — preview */}
         <div className="flex-1 overflow-hidden">
           <BuilderPreview sections={sections} product={previewProduct} />
         </div>
 
-        {/* Right — section editor (320px) */}
-        <div className="w-[320px] shrink-0 border-l border-gray-200 bg-white overflow-hidden flex flex-col">
+        {/* Right — editor (360px) */}
+        <div className="w-[360px] shrink-0 border-l border-gray-200 bg-white flex flex-col overflow-hidden">
           {selectedSection ? (
             <SectionEditor
               section={selectedSection}
@@ -285,10 +380,16 @@ export default function BuilderPage() {
               productId={lpData.product.id}
             />
           ) : (
-            <div className="flex h-full flex-col items-center justify-center text-gray-400 p-6 text-center">
-              <span className="text-3xl mb-3">👈</span>
-              <p className="text-sm font-medium">Sélectionnez une section</p>
-              <p className="text-xs mt-1">dans la liste à gauche pour l'éditer</p>
+            <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-2xl">
+                👈
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Aucune section sélectionnée</p>
+                <p className="mt-1 text-[12px] text-gray-400 leading-relaxed">
+                  Cliquez sur une section dans la liste de gauche pour l'éditer
+                </p>
+              </div>
             </div>
           )}
         </div>

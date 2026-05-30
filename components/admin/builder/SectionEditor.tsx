@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { HeroEditor }        from "@/components/admin/builder/editors/HeroEditor"
 import { BenefitsEditor }    from "@/components/admin/builder/editors/BenefitsEditor"
 import { FeaturesEditor }    from "@/components/admin/builder/editors/FeaturesEditor"
@@ -21,29 +22,59 @@ interface SectionEditorProps {
   productId: string
 }
 
-const SECTION_LABELS: Record<LandingSection["type"], string> = {
-  hero:         "Hero",
-  benefits:     "Bénéfices",
-  features:     "Caractéristiques",
-  video:        "Vidéo",
-  reviews:      "Avis clients",
-  faq:          "FAQ",
-  before_after: "Avant / Après",
-  cta:          "Appel à l'action",
+const SECTION_META: Record<LandingSection["type"], { label: string; icon: string; tabs: string[] }> = {
+  hero:         { label: "Hero",              icon: "🦸", tabs: ["Contenu"] },
+  benefits:     { label: "Bénéfices",         icon: "✨", tabs: ["Contenu"] },
+  features:     { label: "Caractéristiques",  icon: "⚡", tabs: ["Contenu"] },
+  video:        { label: "Vidéo",             icon: "🎥", tabs: ["Contenu"] },
+  reviews:      { label: "Avis clients",      icon: "⭐", tabs: ["Contenu"] },
+  faq:          { label: "FAQ",               icon: "❓", tabs: ["Contenu"] },
+  before_after: { label: "Avant / Après",     icon: "🔄", tabs: ["Contenu"] },
+  cta:          { label: "Appel à l'action",  icon: "🎯", tabs: ["Contenu"] },
 }
 
 export function SectionEditor({ section, onChange, reviews, productId }: SectionEditorProps) {
+  const [activeTab, setActiveTab] = useState(0)
+  const meta = SECTION_META[section.type]
+
   function patchData(newData: LandingSection["data"]) {
     onChange({ ...section, data: newData } as LandingSection)
   }
 
   return (
     <div className="flex h-full flex-col">
+
       {/* Panel header */}
-      <div className="border-b border-gray-200 px-4 py-3">
-        <h3 className="font-bold text-gray-900 text-sm">
-          Éditer — {SECTION_LABELS[section.type]}
-        </h3>
+      <div className="border-b border-gray-100 px-4 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-50 text-lg leading-none">
+            {meta.icon}
+          </div>
+          <div>
+            <p className="text-[13px] font-bold text-gray-900 leading-tight">Éditer</p>
+            <p className="text-[11px] text-gray-400 leading-tight">{meta.label}</p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        {meta.tabs.length > 1 && (
+          <div className="mt-3 flex gap-1 rounded-lg border border-gray-100 bg-gray-50 p-0.5">
+            {meta.tabs.map((tab, i) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(i)}
+                className={`flex-1 rounded-md py-1.5 text-[12px] font-semibold transition-all ${
+                  activeTab === i
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Editor body */}
