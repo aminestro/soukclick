@@ -250,9 +250,39 @@ function ProductGeneratorTab() {
     }
   }
 
+  const LANG_OPTIONS = [
+    { value: "fr",     flag: "🇫🇷", label: "Français"        },
+    { value: "darija", flag: "🇲🇦", label: "Darija"           },
+    { value: "ar",     flag: "🇸🇦", label: "Arabe"            },
+  ]
+
   return (
     <div className="space-y-5">
       <form onSubmit={submit} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
+        {/* Language selector — prominent, required */}
+        <div>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500">
+            Langue du contenu généré
+          </label>
+          <div className="flex gap-2">
+            {LANG_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setLanguage(opt.value)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-xl border-2 py-3 text-sm font-bold transition ${
+                  language === opt.value
+                    ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
+                    : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                }`}
+              >
+                <span className="text-lg">{opt.flag}</span>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div>
           <label className="mb-1 block text-xs font-semibold text-gray-500">URL du produit fournisseur</label>
           <input
@@ -265,12 +295,6 @@ function ProductGeneratorTab() {
           />
           <p className="mt-1 text-xs text-gray-400">Supporte AliExpress, Alibaba, 1688, Amazon, et plus</p>
         </div>
-
-        <Select label="Langue de génération" value={language} onChange={setLanguage} options={[
-          { value: "fr",     label: "Français" },
-          { value: "darija", label: "Darija (دارجة)" },
-          { value: "ar",     label: "Arabe classique (عربية)" },
-        ]} />
 
         <GenerateButton loading={loading} label="Analyser & Générer la fiche produit" />
       </form>

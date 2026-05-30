@@ -14,7 +14,7 @@ function makeHero(): LandingSection {
     type: "hero", enabled: true, order: 1,
     data: {
       headline:           "Le produit qui change tout",
-      subheadline:        "Livraison rapide partout au Maroc - Paiement a la livraison",
+      subheadline:        "Livraison rapide partout au Maroc — Paiement à la livraison",
       image_url:          null,
       video_url:          null,
       cta_text:           "Commander Maintenant",
@@ -32,8 +32,8 @@ function makeBenefits(order: number): LandingSection {
     data: {
       title: "Pourquoi choisir ce produit ?",
       items: [
-        { icon: "⚡", title: "Rapide",    description: "Resultats visibles des la premiere utilisation." },
-        { icon: "✅", title: "Fiable",    description: "Teste et approuve par des milliers de clients." },
+        { icon: "⚡", title: "Rapide",    description: "Résultats visibles dès la première utilisation." },
+        { icon: "✅", title: "Fiable",    description: "Testé et approuvé par des milliers de clients." },
         { icon: "🚚", title: "Livraison", description: "Partout au Maroc en 24-72h." },
       ],
     },
@@ -44,10 +44,10 @@ function makeFeatures(order: number): LandingSection {
   return {
     type: "features", enabled: true, order,
     data: {
-      title: "Caracteristiques",
+      title: "Caractéristiques",
       items: [
-        { image_url: null, title: "Qualite premium",   description: "Fabrique avec les meilleurs materiaux." },
-        { image_url: null, title: "Facile a utiliser", description: "Aucune installation requise." },
+        { image_url: null, title: "Qualité premium",   description: "Fabriqué avec les meilleurs matériaux." },
+        { image_url: null, title: "Facile à utiliser", description: "Aucune installation requise." },
       ],
     },
   }
@@ -56,7 +56,7 @@ function makeFeatures(order: number): LandingSection {
 function makeVideo(order: number): LandingSection {
   return {
     type: "video", enabled: true, order,
-    data: { url: "", thumbnail_url: null, caption: "Regardez comment ca marche" },
+    data: { url: "", thumbnail_url: null, caption: "Regardez comment ça marche" },
   }
 }
 
@@ -71,11 +71,11 @@ function makeFAQ(order: number): LandingSection {
   return {
     type: "faq", enabled: true, order,
     data: {
-      title: "Questions frequentes",
+      title: "Questions fréquentes",
       items: [
-        { question: "Comment passer une commande ?",       answer: "Remplissez le formulaire et notre equipe vous contacte sous 24h." },
-        { question: "Quels sont les delais de livraison ?", answer: "1 a 5 jours selon votre ville." },
-        { question: "Comment fonctionne le paiement ?",    answer: "Vous payez uniquement a la reception de votre commande." },
+        { question: "Comment passer une commande ?",        answer: "Remplissez le formulaire et notre équipe vous contacte sous 24h." },
+        { question: "Quels sont les délais de livraison ?", answer: "1 à 5 jours selon votre ville." },
+        { question: "Comment fonctionne le paiement ?",     answer: "Vous payez uniquement à la réception de votre commande." },
       ],
     },
   }
@@ -85,10 +85,10 @@ function makeCTA(order: number): LandingSection {
   return {
     type: "cta", enabled: true, order,
     data: {
-      headline:     "Commandez maintenant - Stock limite !",
+      headline:     "Commandez maintenant — Stock limité !",
       cta_text:     "Je Commande",
       cta_color:    "#f97316",
-      urgency_text: "Offre limitee - livraison gratuite aujourd'hui seulement",
+      urgency_text: "Offre limitée — livraison gratuite aujourd'hui seulement",
     },
   }
 }
@@ -96,7 +96,7 @@ function makeCTA(order: number): LandingSection {
 function makeBeforeAfter(order: number): LandingSection {
   return {
     type: "before_after", enabled: true, order,
-    data: { before_image: "", after_image: "", caption: "Resultats avant / apres" },
+    data: { before_image: "", after_image: "", caption: "Résultats avant / après" },
   }
 }
 

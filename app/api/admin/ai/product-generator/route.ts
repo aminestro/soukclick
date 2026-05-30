@@ -43,27 +43,26 @@ export async function POST(req: NextRequest) {
     pageContent = `URL fournie: ${url}`
   }
 
-  const langNote = language === "darija"
-    ? "Write all content in Moroccan Darija (Arabic script). Use informal Moroccan tone."
+  const langInstruction = language === "darija"
+    ? `LANGUAGE: Generate ALL content (title, description, benefits, features, FAQ, metaAdsCopy, tiktokHooks) in Moroccan Darija (دارجة مغربية) using Arabic script. Use informal Moroccan conversational tone. The "title" field can remain in French for SEO, but "titleAr" must be in Darija.`
     : language === "ar"
-    ? "Write all content in Modern Standard Arabic (فصحى). Formal tone."
-    : "Write all content in Moroccan French. Casual, sales-oriented tone."
+    ? `LANGUAGE: Generate ALL content (title, description, benefits, features, FAQ, metaAdsCopy, tiktokHooks) in Modern Standard Arabic (فصحى). Formal, professional tone. The "title" field can remain in French for SEO, but "titleAr" must be in MSA.`
+    : `LANGUAGE: Generate ALL content (title, description, benefits, features, FAQ, metaAdsCopy) in French. Casual, sales-oriented Moroccan French. TikTok hooks should be in Darija as Moroccan TikTok audiences prefer it.`
 
-  const prompt = `
-You are an expert Moroccan e-commerce copywriter specializing in COD (cash on delivery) dropshipping.
+  const prompt = `You are an expert Moroccan e-commerce copywriter specializing in COD (cash on delivery) dropshipping.
 
 Analyze this product page content and generate a complete product listing optimized for the Moroccan market.
 
 PAGE CONTENT:
 ${pageContent}
 
-${langNote}
+${langInstruction}
 
 Return a JSON object with this exact structure:
 {
-  "title": "product title (max 80 chars)",
-  "titleAr": "product title in Arabic/Darija",
-  "description": "compelling product description 150-300 words, benefits-focused",
+  "title": "product title in French (max 80 chars, for SEO)",
+  "titleAr": "product title in the selected language (Arabic/Darija)",
+  "description": "compelling product description 150-300 words, benefits-focused, in selected language",
   "benefits": ["benefit 1", "benefit 2", "benefit 3", "benefit 4", "benefit 5"],
   "features": ["feature 1", "feature 2", "feature 3"],
   "suggestedPrice": 299,
@@ -91,8 +90,7 @@ Rules:
 - suggestedPrice and suggestedCost are in Moroccan Dirhams (integers)
 - Suggest a price between 149-499 MAD based on product type
 - All copy must feel authentic for Moroccan buyers
-- COD focus: emphasize "الدفع عند الاستلام" / "paiement à la livraison"
-- TikTok hooks must be in Darija regardless of language setting
+- COD focus: emphasize paiement à la livraison / الدفع عند الاستلام
 - FAQ must cover: delivery time, COD payment, returns, product usage
 Return only the JSON object, no markdown.`
 
