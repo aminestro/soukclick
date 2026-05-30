@@ -5,7 +5,7 @@ import { ProductStatus } from "@prisma/client"
 import { PixelInit } from "@/components/store/PixelInit"
 import { SectionRenderer } from "@/components/store/SectionRenderer"
 import { OrderForm } from "@/components/store/OrderForm"
-import type { LandingSection } from "@/types/landing"
+import type { LandingSection, CheckoutSection } from "@/types/landing"
 
 export const dynamic = 'force-dynamic'
 
@@ -68,15 +68,17 @@ export default async function LandingPage({ params }: PageProps) {
 
   const { landingPage, cities } = data
   const { product } = landingPage
-  const language = (landingPage.language ?? "fr") as "fr" | "darija" | "ar"
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const language = (((landingPage as any).language) ?? "fr") as "fr" | "darija" | "ar"
 
-  const allSections = (landingPage.sections as LandingSection[])
+  const allSections = (landingPage.sections as unknown as LandingSection[])
     .filter((s) => s.enabled)
     .sort((a, b) => a.order - b.order)
 
-  // Split: hero renders first, OrderForm goes between hero and the rest
-  const heroSections  = allSections.filter((s) => s.type === "hero")
-  const otherSections = allSections.filter((s) => s.type !== "hero")
+  // Split: hero first, checkout/OrderForm in the middle, rest below
+  const heroSections     = allSections.filter((s) => s.type === "hero")
+  const checkoutSection  = allSections.find((s): s is CheckoutSection => s.type === "checkout")
+  const otherSections    = allSections.filter((s) => s.type !== "hero" && s.type !== "checkout")
 
   const upsell = product.upsellTriggers[0] ?? null
 
@@ -115,6 +117,7 @@ export default async function LandingPage({ params }: PageProps) {
               cities={cities}
               landingPageId={landingPage.id}
               language={language}
+              checkoutConfig={checkoutSection?.data}
             />
           </div>
         </section>

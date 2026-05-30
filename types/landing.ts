@@ -9,6 +9,7 @@ export type SectionType =
   | "faq"
   | "before_after"
   | "cta"
+  | "checkout"
 
 interface BaseSection {
   type:    SectionType
@@ -145,6 +146,23 @@ export interface CtaSection extends BaseSection {
   data: CtaData
 }
 
+// checkout --------------------------------------------------------------------
+
+export interface CheckoutData {
+  title:               string
+  subtitle:            string | null
+  cta_text:            string
+  cta_color:           string
+  show_product_images: boolean
+  show_summary:        boolean
+  trust_items:         string[]
+}
+
+export interface CheckoutSection extends BaseSection {
+  type: "checkout"
+  data: CheckoutData
+}
+
 // union -----------------------------------------------------------------------
 
 export type LandingSection =
@@ -156,3 +174,4 @@ export type LandingSection =
   | FaqSection
   | BeforeAfterSection
   | CtaSection
+  | CheckoutSection

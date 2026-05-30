@@ -23,25 +23,26 @@ import { Toggle } from "@/components/admin/builder/editors/HeroEditor"
 // ─── Section metadata ─────────────────────────────────────────────────────────
 
 const SECTION_META: Record<SectionType, { label: string; icon: string; description: string }> = {
-  hero:         { label: "Hero",              icon: "🦸", description: "Titre, image produit et bouton d'achat" },
-  benefits:     { label: "Bénéfices",         icon: "✨", description: "Liste des avantages du produit"        },
-  features:     { label: "Caractéristiques",  icon: "⚡", description: "Détails et fonctionnalités"            },
-  video:        { label: "Vidéo",             icon: "🎥", description: "Intégrer une vidéo YouTube ou TikTok"  },
-  reviews:      { label: "Avis clients",      icon: "⭐", description: "Témoignages et notes clients"          },
-  faq:          { label: "FAQ",               icon: "❓", description: "Questions / réponses fréquentes"       },
-  before_after: { label: "Avant / Après",     icon: "🔄", description: "Comparaison visuelle avant/après"      },
-  cta:          { label: "Appel à l'action",  icon: "🎯", description: "Section de conversion finale"          },
+  hero:         { label: "Hero",                icon: "🦸", description: "Titre, image produit et bouton d'achat"      },
+  benefits:     { label: "Bénéfices",           icon: "✨", description: "Liste des avantages du produit"              },
+  features:     { label: "Caractéristiques",    icon: "⚡", description: "Détails et fonctionnalités"                  },
+  video:        { label: "Vidéo",               icon: "🎥", description: "Intégrer une vidéo YouTube ou TikTok"        },
+  reviews:      { label: "Avis clients",        icon: "⭐", description: "Témoignages et notes clients"                },
+  faq:          { label: "FAQ",                 icon: "❓", description: "Questions / réponses fréquentes"             },
+  before_after: { label: "Avant / Après",       icon: "🔄", description: "Comparaison visuelle avant/après"            },
+  cta:          { label: "Appel à l'action",    icon: "🎯", description: "Section de conversion finale"                },
+  checkout:     { label: "Formulaire Commande", icon: "🛒", description: "Formulaire de commande COD — titre, CTA, couleurs" },
 }
 
 const ALL_SECTION_TYPES: SectionType[] = [
-  "hero", "benefits", "features", "video", "reviews", "faq", "before_after", "cta",
+  "hero", "benefits", "features", "video", "reviews", "faq", "before_after", "cta", "checkout",
 ]
 
 // ─── Default data factory ────────────────────────────────────────────────────
 
 function makeDefaultSection(type: SectionType, order: number): LandingSection {
   const defaults: Record<SectionType, LandingSection["data"]> = {
-    hero:         { headline: "Titre principal", subheadline: "", image_url: null, video_url: null, cta_text: "Commander", cta_color: "#f97316", show_price: true, show_compare_price: true, badges: ["cod"] },
+    hero:         { headline: "Titre principal", subheadline: "", image_url: null, video_url: null, cta_text: "Commander", cta_color: "#f97316", show_price: true, show_compare_price: true, badges: ["cod"] as Array<"cod"|"livraison_gratuite"|"garantie"|"retour"> },
     benefits:     { title: "Nos avantages", items: [{ icon: "⭐", title: "Bénéfice 1", description: "" }] },
     features:     { title: "Caractéristiques", items: [{ image_url: null, title: "Feature 1", description: "" }] },
     video:        { url: "", thumbnail_url: null, caption: null },
@@ -49,6 +50,7 @@ function makeDefaultSection(type: SectionType, order: number): LandingSection {
     faq:          { title: "FAQ", items: [{ question: "Question ?", answer: "Réponse." }] },
     before_after: { before_image: "", after_image: "", caption: null },
     cta:          { headline: "Commandez maintenant", cta_text: "Commander", cta_color: "#f97316", urgency_text: null },
+    checkout:     { title: "👇 أدخل معلوماتك للطلب", subtitle: null, cta_text: "أطلب الآن", cta_color: "#f97316", show_product_images: true, show_summary: true, trust_items: ["🔒 الدفع عند الاستلام", "🚚 توصيل في 24-72 ساعة", "✅ ضمان استرداد المال"] },
   }
   return { type, enabled: true, order, data: defaults[type] } as LandingSection
 }

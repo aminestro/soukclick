@@ -9,6 +9,7 @@ import { ReviewsEditor }     from "@/components/admin/builder/editors/ReviewsEdi
 import { FAQEditor }         from "@/components/admin/builder/editors/FAQEditor"
 import { BeforeAfterEditor } from "@/components/admin/builder/editors/BeforeAfterEditor"
 import { CTAEditor }         from "@/components/admin/builder/editors/CTAEditor"
+import { CheckoutEditor }    from "@/components/admin/builder/editors/CheckoutEditor"
 import type { LandingSection } from "@/types/landing"
 
 interface ReviewOption {
@@ -38,6 +39,7 @@ const SECTION_META: Record<LandingSection["type"], { label: string; icon: string
   faq:          { label: "FAQ",               icon: "❓", tabs: ["Contenu"] },
   before_after: { label: "Avant / Après",     icon: "🔄", tabs: ["Contenu"] },
   cta:          { label: "Appel à l'action",  icon: "🎯", tabs: ["Contenu"] },
+  checkout:     { label: "Formulaire Commande", icon: "🛒", tabs: ["Contenu"] },
 }
 
 export function SectionEditor({ section, onChange, reviews, productId, language = "fr" }: SectionEditorProps) {
@@ -127,6 +129,9 @@ export function SectionEditor({ section, onChange, reviews, productId, language 
         )}
         {section.type === "cta" && (
           <CTAEditor data={section.data} onChange={patchData} />
+        )}
+        {section.type === "checkout" && (
+          <CheckoutEditor data={section.data} onChange={patchData} />
         )}
       </div>
     </div>

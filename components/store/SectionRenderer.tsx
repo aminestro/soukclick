@@ -1,13 +1,14 @@
 import type { LandingSection } from "@/types/landing"
 import type { Offer, Review } from "@prisma/client"
-import { Hero }        from "@/components/store/sections/Hero"
-import { Benefits }    from "@/components/store/sections/Benefits"
-import { Features }    from "@/components/store/sections/Features"
-import { Video }       from "@/components/store/sections/Video"
-import { Reviews }     from "@/components/store/sections/Reviews"
-import { FAQ }         from "@/components/store/sections/FAQ"
-import { BeforeAfter } from "@/components/store/sections/BeforeAfter"
-import { CTA }         from "@/components/store/sections/CTA"
+import { Hero }             from "@/components/store/sections/Hero"
+import { Benefits }         from "@/components/store/sections/Benefits"
+import { Features }         from "@/components/store/sections/Features"
+import { Video }            from "@/components/store/sections/Video"
+import { Reviews }          from "@/components/store/sections/Reviews"
+import { FAQ }              from "@/components/store/sections/FAQ"
+import { BeforeAfter }      from "@/components/store/sections/BeforeAfter"
+import { CTA }              from "@/components/store/sections/CTA"
+import { CheckoutPreview }  from "@/components/store/sections/Checkout"
 
 interface SectionRendererProps {
   sections: LandingSection[]
@@ -78,6 +79,10 @@ export function SectionRenderer({ sections, product, language = "fr" }: SectionR
 
           case "cta":
             return <CTA key={idx} data={section.data} />
+
+          case "checkout":
+            // Rendered by the page component as a real OrderForm — show preview only in builder
+            return <CheckoutPreview key={idx} data={section.data} />
 
           default:
             return null

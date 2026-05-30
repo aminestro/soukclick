@@ -100,21 +100,36 @@ function makeBeforeAfter(order: number): LandingSection {
   }
 }
 
+function makeCheckout(order: number): LandingSection {
+  return {
+    type: "checkout", enabled: true, order,
+    data: {
+      title:               "👇 أدخل معلوماتك للطلب",
+      subtitle:            null,
+      cta_text:            "أطلب الآن",
+      cta_color:           "#f97316",
+      show_product_images: true,
+      show_summary:        true,
+      trust_items:         ["🔒 الدفع عند الاستلام", "🚚 توصيل في 24-72 ساعة", "✅ ضمان استرداد المال"],
+    },
+  }
+}
+
 const TEMPLATE_SECTIONS: Record<string, LandingSection[]> = {
   PROBLEM_SOLUTION: [
-    makeHero(), makeBenefits(2), makeVideo(3), makeReviews(4), makeFAQ(5), makeCTA(6),
+    makeHero(), makeCheckout(2), makeBenefits(3), makeVideo(4), makeReviews(5), makeFAQ(6), makeCTA(7),
   ],
   GADGET_DEMO: [
-    makeHero(), makeFeatures(2), makeVideo(3), makeBenefits(4), makeReviews(5), makeFAQ(6), makeCTA(7),
+    makeHero(), makeCheckout(2), makeFeatures(3), makeVideo(4), makeBenefits(5), makeReviews(6), makeFAQ(7), makeCTA(8),
   ],
   BEFORE_AFTER: [
-    makeHero(), makeBeforeAfter(2), makeBenefits(3), makeReviews(4), makeFAQ(5), makeCTA(6),
+    makeHero(), makeCheckout(2), makeBeforeAfter(3), makeBenefits(4), makeReviews(5), makeFAQ(6), makeCTA(7),
   ],
   BUNDLE: [
-    makeHero(), makeFeatures(2), makeBenefits(3), makeReviews(4), makeFAQ(5), makeCTA(6),
+    makeHero(), makeCheckout(2), makeFeatures(3), makeBenefits(4), makeReviews(5), makeFAQ(6), makeCTA(7),
   ],
   VIRAL: [
-    makeHero(), makeVideo(2), makeBenefits(3), makeReviews(4), makeFAQ(5), makeCTA(6),
+    makeHero(), makeCheckout(2), makeVideo(3), makeBenefits(4), makeReviews(5), makeFAQ(6), makeCTA(7),
   ],
 }
 
@@ -224,6 +239,7 @@ export async function POST(req: NextRequest) {
   const sections = aiSections ?? (TEMPLATE_SECTIONS[template] ?? TEMPLATE_SECTIONS["GADGET_DEMO"]!)
 
   const lp = await prisma.landingPage.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       productId,
       slug:      candidateSlug,
@@ -233,7 +249,7 @@ export async function POST(req: NextRequest) {
       isActive:  false,
       metaTitle: metaTitle ?? product.titleFr,
       metaDesc:  metaDesc  ?? null,
-    },
+    } as any,
   })
 
   return NextResponse.json(lp, { status: 201 })
