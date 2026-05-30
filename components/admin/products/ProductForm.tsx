@@ -48,7 +48,7 @@ interface ProductFormProps {
 }
 
 const TABS_NEW  = ["Informations","Prix","Description","Images","Fournisseur"] as const
-const TABS_EDIT = [...TABS_NEW, "Landing Pages","Offres","Avis"] as const
+const TABS_EDIT = [...TABS_NEW, "Landing Pages","Offres","Avis","📢 Publicités"] as const
 
 // ─── Offer manager (edit-only tab) ───────────────────────────────────────────
 
@@ -166,6 +166,339 @@ function ReviewsTab({ productId }: { productId: string }) {
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ─── Ads Copy Tab ────────────────────────────────────────────────────────────
+
+type AdsPlatform = "META" | "TIKTOK" | "INSTAGRAM" | "GOOGLE"
+type AdsLanguage = "fr" | "darija" | "ar"
+
+interface AdsCopyResult {
+  hooks:          string[]
+  primary_texts:  string[]
+  headlines:      string[]
+  tiktok_script?: { hook: string; body: string; cta: string }
+  hashtags:       string[]
+}
+
+function CopyCard({
+  text,
+  label,
+  productId,
+  platform,
+  language,
+  type,
+}: {
+  text:      string
+  label:     string
+  productId: string
+  platform:  AdsPlatform
+  language:  AdsLanguage
+  type:      "HOOK" | "AD_COPY"
+}) {
+  const [copied,  setCopied]  = useState(false)
+  const [saved,   setSaved]   = useState(false)
+  const [saving,  setSaving]  = useState(false)
+  const isRtl = language !== "fr"
+
+  async function copy() {
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function save() {
+    setSaving(true)
+    const res = await fetch("/api/admin/creatives", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({
+        productId,
+        type,
+        platform: platform === "INSTAGRAM" ? "META" : platform,
+        title:    `${label} — ${platform} — ${language.toUpperCase()}`,
+        content:  text,
+        tags:     [platform.toLowerCase(), language],
+      }),
+    })
+    if (res.ok) {
+      setSaved(true)
+      toast.success("Sauvegardé dans Créatifs ✅")
+    } else {
+      toast.error("Erreur de sauvegarde")
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-3 space-y-2.5">
+      <p dir={isRtl ? "rtl" : "ltr"} className="text-sm text-gray-800 leading-relaxed font-medium">
+        {text}
+      </p>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={copy}
+          className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition"
+        >
+          {copied ? "✅ Copié" : "📋 Copier"}
+        </button>
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || saved}
+          className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+            saved
+              ? "border-green-200 bg-green-50 text-green-700"
+              : "border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100"
+          } disabled:opacity-60`}
+        >
+          {saving ? "…" : saved ? "⭐ Sauvegardé" : "⭐ Sauvegarder"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function AdsTab({ productId }: { productId: string }) {
+  const [platform,  setPlatform]  = useState<AdsPlatform>("META")
+  const [language,  setLanguage]  = useState<AdsLanguage>("fr")
+  const [loading,   setLoading]   = useState(false)
+  const [result,    setResult]    = useState<AdsCopyResult | null>(null)
+
+  async function generate() {
+    setLoading(true)
+    setResult(null)
+    try {
+      const res = await fetch("/api/admin/ai/ads-copy", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ productId, platform, language }),
+      })
+      const data = await res.json() as AdsCopyResult & { error?: string }
+      if (!res.ok) { toast.error(data.error ?? "Erreur"); return }
+      setResult(data)
+    } catch { toast.error("Erreur réseau") }
+    finally { setLoading(false) }
+  }
+
+  const PLATFORMS: AdsPlatform[] = ["META", "TIKTOK", "INSTAGRAM", "GOOGLE"]
+  const LANGUAGES: Array<{ id: AdsLanguage; label: string }> = [
+    { id: "fr",     label: "Français" },
+    { id: "darija", label: "Darija"   },
+    { id: "ar",     label: "Arabe"    },
+  ]
+
+  return (
+    <div className="space-y-5">
+      {/* Controls */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
+        {/* Platform */}
+        <div>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">Plateforme</label>
+          <div className="flex gap-2 flex-wrap">
+            {PLATFORMS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPlatform(p)}
+                className={`rounded-xl border px-4 py-2 text-sm font-bold transition ${
+                  platform === p
+                    ? "border-orange-400 bg-orange-50 text-orange-700"
+                    : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
+                }`}
+              >
+                {p === "META" ? "🔵 META" : p === "TIKTOK" ? "🎵 TIKTOK" : p === "INSTAGRAM" ? "📸 INSTAGRAM" : "🔍 GOOGLE"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Language */}
+        <div>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">Langue</label>
+          <div className="flex gap-2">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => setLanguage(l.id)}
+                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                  language === l.id
+                    ? "border-orange-400 bg-orange-50 text-orange-700"
+                    : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Generate button */}
+        <button
+          type="button"
+          onClick={generate}
+          disabled={loading}
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:from-orange-600 hover:to-orange-700 disabled:opacity-60 transition"
+        >
+          {loading
+            ? <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />Génération en cours…</>
+            : <>🤖 Générer les Copies</>
+          }
+        </button>
+      </div>
+
+      {/* Loading state */}
+      {loading && (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white py-16 shadow-sm">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-orange-100 border-t-orange-500" />
+          <p className="text-sm font-semibold text-gray-600">GPT-4o génère vos copies publicitaires…</p>
+          <p className="text-xs text-gray-400">Optimisé pour le marché marocain COD</p>
+        </div>
+      )}
+
+      {/* Results */}
+      {result && !loading && (
+        <div className="space-y-5">
+          {/* Section 1 — Hooks */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">
+              🎣 Accroches — Hooks ({result.hooks.length})
+            </h3>
+            <div className="space-y-2.5">
+              {result.hooks.map((hook, i) => (
+                <CopyCard
+                  key={i}
+                  text={hook}
+                  label={`Hook ${i + 1}`}
+                  productId={productId}
+                  platform={platform}
+                  language={language}
+                  type="HOOK"
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Section 2 — Primary Texts */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">
+              📝 Texte Principal ({result.primary_texts.length} versions)
+            </h3>
+            <div className="space-y-2.5">
+              {result.primary_texts.map((text, i) => (
+                <CopyCard
+                  key={i}
+                  text={text}
+                  label={`Primary Text ${i + 1}`}
+                  productId={productId}
+                  platform={platform}
+                  language={language}
+                  type="AD_COPY"
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Section 3 — Headlines */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-widests text-gray-400">
+              💬 Titres — Headlines ({result.headlines.length})
+            </h3>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {result.headlines.map((h, i) => (
+                <div key={i} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <p className="text-sm font-bold text-gray-900 mb-2">{h}</p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(h)
+                      toast.success("Headline copiée")
+                    }}
+                    className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                  >
+                    📋 Copier
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 4 — TikTok Script */}
+          {result.tiktok_script && (
+            <div className="rounded-2xl border border-pink-100 bg-pink-50/40 p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-pink-600">
+                  🎵 Script TikTok / UGC
+                </h3>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const full = `HOOK:\n${result.tiktok_script!.hook}\n\nSCRIPT:\n${result.tiktok_script!.body}\n\nCTA:\n${result.tiktok_script!.cta}`
+                    await navigator.clipboard.writeText(full)
+                    toast.success("Script complet copié")
+                  }}
+                  className="flex items-center gap-1 rounded-lg border border-pink-200 bg-white px-2.5 py-1 text-xs font-semibold text-pink-600 hover:bg-pink-50"
+                >
+                  📋 Copier tout
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div className="rounded-xl border border-pink-200 bg-white p-3">
+                  <p className="mb-1 text-xs font-bold text-pink-500 uppercase">🎣 Hook (3 secondes)</p>
+                  <p className="text-sm text-gray-800" dir={language !== "fr" ? "rtl" : "ltr"}>{result.tiktok_script.hook}</p>
+                </div>
+                <div className="rounded-xl border border-pink-200 bg-white p-3">
+                  <p className="mb-1 text-xs font-bold text-pink-500 uppercase">📜 Script complet</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap" dir={language !== "fr" ? "rtl" : "ltr"}>{result.tiktok_script.body}</p>
+                </div>
+                <div className="rounded-xl border border-pink-200 bg-white p-3">
+                  <p className="mb-1 text-xs font-bold text-pink-500 uppercase">📢 CTA</p>
+                  <p className="text-sm font-bold text-gray-900" dir={language !== "fr" ? "rtl" : "ltr"}>{result.tiktok_script.cta}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Section 5 — Hashtags */}
+          {result.hashtags?.length > 0 && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                  # Hashtags Maroc ({result.hashtags.length})
+                </h3>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(result.hashtags.join(" "))
+                    toast.success("Hashtags copiés")
+                  }}
+                  className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                >
+                  📋 Copier tout
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {result.hashtags.map((tag, i) => (
+                  <span
+                    key={i}
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(tag)
+                      toast.success(`${tag} copié`)
+                    }}
+                    className="cursor-pointer rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -524,8 +857,12 @@ export function ProductForm({ productId, defaultValues, landingPages }: ProductF
         </div>
       )}
 
+      {isEdit && activeTab === "📢 Publicités" && productId && (
+        <AdsTab productId={productId} />
+      )}
+
       {/* ── Save buttons (visible on all tabs except edit-only) ─────────────── */}
-      {!["Landing Pages","Offres","Avis"].includes(activeTab) && (
+      {!["Landing Pages","Offres","Avis","📢 Publicités"].includes(activeTab) && (
         <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <button
             type="button"

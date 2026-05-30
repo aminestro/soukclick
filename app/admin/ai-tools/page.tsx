@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import {
   Sparkles, Loader2, Copy, Check, Save,
   Wand2, FileText, Video, Search, HelpCircle, Link2, ChevronRight,
+  PackagePlus, ImageIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { AIResultCard } from "@/components/admin/ai/AIResultCard"
@@ -97,6 +98,17 @@ interface ProductResult {
   faq:          Array<{ question: string; answer: string }>
   metaAdsCopy:  Array<{ headline: string; primaryText: string; description: string }>
   tiktokHooks:  string[]
+  imageUrl?:     string | null
+  images?:       string[]
+}
+
+interface CreatedProduct {
+  id:        string
+  titleFr:   string
+  slug:      string
+  price:     number
+  costPrice: number
+  images:    string[]
 }
 
 function ProductGeneratorTab() {
@@ -104,6 +116,9 @@ function ProductGeneratorTab() {
   const [language, setLanguage] = useState("fr")
   const [loading,  setLoading]  = useState(false)
   const [result,   setResult]   = useState<ProductResult | null>(null)
+  const [creatingProduct, setCreatingProduct] = useState(false)
+  const [savingAssets,    setSavingAssets]    = useState(false)
+  const [createdProduct,  setCreatedProduct]  = useState<CreatedProduct | null>(null)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -118,8 +133,121 @@ function ProductGeneratorTab() {
       const data = await res.json()
       if (!res.ok) { toast.error(data.error ?? "Erreur"); return }
       setResult(data as ProductResult)
+      setCreatedProduct(null)
     } catch { toast.error("Erreur réseau") }
     finally { setLoading(false) }
+  }
+
+  async function createProduct() {
+    if (!result) return
+    setCreatingProduct(true)
+    try {
+      const productImage = result.images?.[0] ?? result.imageUrl ?? null
+      const res = await fetch("/api/admin/products", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          titleFr:       result.title,
+          titleAr:       result.titleAr,
+          descriptionFr: result.description,
+          descriptionAr: null,
+          price:         Math.round(result.suggestedPrice * 100),
+          costPrice:     Math.round(result.suggestedCost * 100),
+          images:        productImage ? [productImage] : [],
+          stock:         0,
+          status:        "DRAFT",
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Erreur de création")
+        return
+      }
+      setCreatedProduct(data as CreatedProduct)
+      toast.success("Produit créé!")
+    } catch {
+      toast.error("Erreur réseau")
+    } finally {
+      setCreatingProduct(false)
+    }
+  }
+
+  async function saveCreativesAndFaq() {
+    if (!result) return
+    if (!createdProduct) {
+      toast.error("Créez le produit d'abord")
+      return
+    }
+
+    setSavingAssets(true)
+    try {
+      await Promise.all(
+        result.tiktokHooks.map((hook, index) =>
+          fetch("/api/admin/creatives", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({
+              productId: createdProduct.id,
+              type:      "HOOK",
+              platform:  "TIKTOK",
+              title:     `Hook TikTok ${index + 1} — ${createdProduct.titleFr}`,
+              content:   hook,
+              tags:      ["ai", "tiktok", "hook"],
+            }),
+          }),
+        ),
+      )
+
+      const landingRes = await fetch("/api/admin/landing-pages", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          productId: createdProduct.id,
+          template:  "GADGET_DEMO",
+          metaTitle: result.title,
+          metaDesc:  result.description.slice(0, 320),
+        }),
+      })
+      const landingPage = await landingRes.json()
+      if (!landingRes.ok) {
+        toast.error(landingPage.error ?? "Créatifs sauvegardés, FAQ non ajoutée")
+        return
+      }
+
+      const sections = Array.isArray(landingPage.sections) ? landingPage.sections : []
+      const faqSection = {
+        type:    "faq",
+        enabled: true,
+        order:   sections.length + 1,
+        data: {
+          title: "Questions fréquentes",
+          items: result.faq.map((item) => ({
+            question: item.question,
+            answer:   item.answer,
+          })),
+        },
+      }
+
+      const patchedSections = sections.some((section: { type?: string }) => section.type === "faq")
+        ? sections.map((section: { type?: string }) => section.type === "faq" ? faqSection : section)
+        : [...sections, faqSection]
+
+      const faqRes = await fetch(`/api/admin/landing-pages/${landingPage.id}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ sections: patchedSections }),
+      })
+      if (!faqRes.ok) {
+        toast.error("Créatifs sauvegardés, FAQ non ajoutée")
+        return
+      }
+
+      toast.success("Créatifs et FAQ sauvegardés")
+    } catch {
+      toast.error("Erreur de sauvegarde")
+    } finally {
+      setSavingAssets(false)
+    }
   }
 
   return (
@@ -251,6 +379,86 @@ function ProductGeneratorTab() {
                   <p className="text-sm text-gray-600">{item.answer}</p>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Create product */}
+          <div className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-orange-500">Création produit</h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[140px_1fr]">
+              <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
+                {result.images?.[0] || result.imageUrl ? (
+                  <img
+                    src={result.images?.[0] ?? result.imageUrl ?? ""}
+                    alt={result.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-gray-400">
+                    <ImageIcon className="h-8 w-8" />
+                    <span className="text-center text-xs font-semibold">Aucune image</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Produit généré</p>
+                  <p className="mt-1 text-lg font-extrabold text-gray-900">{result.title}</p>
+                  {result.titleAr && <p className="mt-0.5 text-sm text-gray-500" dir="rtl">{result.titleAr}</p>}
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-xl bg-green-50 p-3">
+                    <p className="text-xs text-gray-500">Prix suggéré</p>
+                    <p className="text-lg font-extrabold text-green-600">{result.suggestedPrice} MAD</p>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-3">
+                    <p className="text-xs text-gray-500">Coût estimé</p>
+                    <p className="text-lg font-extrabold text-gray-700">{result.suggestedCost} MAD</p>
+                  </div>
+                  <div className="rounded-xl bg-orange-50 p-3">
+                    <p className="text-xs text-gray-500">Marge</p>
+                    <p className="text-lg font-extrabold text-orange-600">
+                      {result.suggestedPrice > 0
+                        ? `${Math.round(((result.suggestedPrice - result.suggestedCost) / result.suggestedPrice) * 100)}%`
+                        : "—"
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={createProduct}
+                    disabled={creatingProduct || !!createdProduct}
+                    className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {creatingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackagePlus className="h-4 w-4" />}
+                    {createdProduct ? "Produit créé" : "Créer le Produit"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={saveCreativesAndFaq}
+                    disabled={savingAssets || !createdProduct}
+                    className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingAssets ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Sauvegarder les Créatifs
+                  </button>
+
+                  {createdProduct && (
+                    <div className="flex items-center gap-3 rounded-xl bg-green-50 px-4 py-2.5 text-sm font-bold text-green-700">
+                      Produit créé!
+                      <Link href="/admin/landing-pages/new" className="text-orange-600 hover:text-orange-700">
+                        Créer une Landing Page →
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

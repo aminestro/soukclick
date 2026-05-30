@@ -20,25 +20,29 @@ export const metadata: Metadata = {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 async function getActiveProducts() {
-  return prisma.product.findMany({
-    where:   { status: "ACTIVE" },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id:           true,
-      slug:         true,
-      titleFr:      true,
-      price:        true,
-      comparePrice: true,
-      images:       true,
-      _count:       { select: { orders: true } },
-      landingPages: {
-        where:   { isActive: true },
-        select:  { slug: true },
-        take:    1,
-        orderBy: { createdAt: "desc" },
+  try {
+    return await prisma.product.findMany({
+      where:   { status: "ACTIVE" },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id:           true,
+        slug:         true,
+        titleFr:      true,
+        price:        true,
+        comparePrice: true,
+        images:       true,
+        _count:       { select: { orders: true } },
+        landingPages: {
+          where:   { isActive: true },
+          select:  { slug: true },
+          take:    1,
+          orderBy: { createdAt: "desc" },
+        },
       },
-    },
-  })
+    })
+  } catch {
+    return []
+  }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
