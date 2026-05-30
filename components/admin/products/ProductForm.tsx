@@ -539,10 +539,11 @@ export function ProductForm({ productId, defaultValues, landingPages }: ProductF
   const costPrice  = watch("costPrice")
   const images     = watch("images")
 
-  // Auto-generate slug from title
+  // Auto-generate slug from title (handles Arabic via transliteration)
   useEffect(() => {
     if (!slugEdited && titleFr) {
-      setValue("slug", generateSlug(titleFr))
+      const generated = generateSlug(titleFr)
+      if (generated) setValue("slug", generated)
     }
   }, [titleFr, slugEdited, setValue])
 
@@ -552,7 +553,9 @@ export function ProductForm({ productId, defaultValues, landingPages }: ProductF
   // ── Submit ────────────────────────────────────────────────────────────────
 
   async function submit(data: ProductFormValues, targetStatus?: "DRAFT" | "ACTIVE") {
-    const finalData = { ...data, status: targetStatus ?? data.status }
+    // Auto-fix empty or invalid slug before saving
+    const cleanSlug = generateSlug(data.slug || data.titleFr)
+    const finalData = { ...data, slug: cleanSlug, status: targetStatus ?? data.status }
     setSaving(targetStatus ?? "save")
 
     const method = isEdit ? "PATCH" : "POST"
@@ -627,18 +630,43 @@ export function ProductForm({ productId, defaultValues, landingPages }: ProductF
 
           {/* Slug */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Slug URL</label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">Slug URL</label>
+              {slugEdited && (
+                <button
+                  type="button"
+                  onClick={() => { setValue("slug", generateSlug(titleFr)); setSlugEdited(false) }}
+                  className="text-xs text-orange-500 hover:text-orange-600 font-semibold"
+                >
+                  ↺ Régénérer depuis le titre
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-0">
               <span className="rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-400">/</span>
               <input
                 {...register("slug")}
                 onChange={(e) => {
                   setSlugEdited(true)
-                  setValue("slug", generateSlug(e.target.value))
+                  // Client-side: only allow valid slug chars; auto-sanitize on blur
+                  setValue("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-{2,}/g, "-"))
                 }}
-                className="flex-1 rounded-r-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
+                onBlur={(e) => {
+                  // Final sanitize on blur — also auto-fix empty slug
+                  const clean = generateSlug(e.target.value) || generateSlug(titleFr)
+                  setValue("slug", clean)
+                }}
+                placeholder="mon-produit"
+                className="flex-1 rounded-r-xl border border-gray-200 px-4 py-2.5 text-sm font-mono outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
               />
             </div>
+            {/* Preview */}
+            {watch("slug") && (
+              <p className="mt-1.5 flex items-center gap-1 text-xs text-gray-400">
+                <span className="text-gray-300">soukclick.store/</span>
+                <span className="font-semibold text-gray-600">{watch("slug")}</span>
+              </p>
+            )}
             {errors.slug && <p className="mt-1 text-xs text-red-600">{errors.slug.message}</p>}
           </div>
 

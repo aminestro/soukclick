@@ -125,9 +125,10 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data
 
-  const baseSlug = data.slug
-    ? generateSlug(data.slug)
-    : generateSlug(data.titleFr)
+  // Always derive from titleFr first; explicit slug is a hint, not guaranteed
+  const rawSlug  = data.slug?.trim() ? generateSlug(data.slug) : generateSlug(data.titleFr)
+  // Final safety: if somehow still empty (pure emoji title etc.) use titleFr hash
+  const baseSlug = rawSlug || generateSlug(data.titleFr) || `product-${Date.now()}`
 
   const slug = await ensureUniqueSlug(baseSlug, prisma)
 
