@@ -87,48 +87,31 @@ export default async function HomePage() {
         gtmId={process.env.NEXT_PUBLIC_GTM_ID}
       />
 
-      {/* ── CSS Animations ─────────────────────────────────────── */}
+      {/* CSS animations — only what's used on this page */}
       <style>{`
-        @keyframes marquee {
-          0%   { transform: translateX(0) }
-          100% { transform: translateX(-50%) }
-        }
         @keyframes pulse-wa {
           0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0.5) }
           50%       { box-shadow: 0 0 0 12px rgba(37,211,102,0) }
         }
-        @keyframes fadeInUp {
-          from { opacity:0; transform:translateY(20px) }
-          to   { opacity:1; transform:translateY(0)    }
-        }
-        .marquee-track { display:flex; width:max-content; animation:marquee 28s linear infinite }
         .pulse-wa { animation: pulse-wa 2s ease infinite }
         .card-hover { transition: transform .2s ease, box-shadow .2s ease }
         .card-hover:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,.12) }
         .img-zoom img { transition: transform .4s ease }
         .img-zoom:hover img { transform:scale(1.08) }
-        .fade-in { animation: fadeInUp .6s ease forwards }
       `}</style>
 
       <div className="min-h-screen bg-white font-sans" style={{ fontFamily: "system-ui,-apple-system,sans-serif" }}>
 
         {/* ── 1. ANNOUNCEMENT BAR ───────────────────────────────── */}
-        <div className="overflow-hidden bg-gray-950 py-2.5 text-white">
-          <div className="marquee-track">
-            {[1, 2].map((n) => (
-              <span key={n} className="flex items-center gap-8 px-4 text-xs font-semibold tracking-wide whitespace-nowrap">
-                <span>🚚 Livraison gratuite dès 200 MAD</span>
-                <span className="text-orange-400">•</span>
-                <span>✅ Paiement à la livraison</span>
-                <span className="text-orange-400">•</span>
-                <span>🔒 100% Sécurisé</span>
-                <span className="text-orange-400">•</span>
-                <span>⭐ +2 000 clients satisfaits</span>
-                <span className="text-orange-400">•</span>
-                <span>🇲🇦 Livraison partout au Maroc</span>
-                <span className="text-orange-400">•</span>
-              </span>
-            ))}
+        <div className="bg-gray-950 py-2 text-white">
+          <div className="mx-auto flex max-w-5xl items-center justify-center gap-4 overflow-hidden px-4 text-xs font-semibold tracking-wide">
+            <span className="hidden sm:inline">🚚 Livraison gratuite dès 200 MAD</span>
+            <span className="text-orange-400 hidden sm:inline">•</span>
+            <span>✅ Paiement à la livraison</span>
+            <span className="text-orange-400">•</span>
+            <span>🇲🇦 Partout au Maroc</span>
+            <span className="text-orange-400 hidden md:inline">•</span>
+            <span className="hidden md:inline">⭐ +2 000 clients satisfaits</span>
           </div>
         </div>
 
@@ -286,7 +269,7 @@ export default async function HomePage() {
                       href={href}
                       className="card-hover group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
                     >
-                      {/* Image */}
+                      {/* Image — first card is priority (LCP candidate); rest are lazy */}
                       <div className="img-zoom relative aspect-square overflow-hidden bg-gray-100">
                         {product.images[0] ? (
                           <Image
@@ -295,6 +278,8 @@ export default async function HomePage() {
                             fill
                             sizes="(max-width:640px) 50vw,(max-width:1024px) 33vw,25vw"
                             className="object-cover"
+                            priority={index === 0}
+                            loading={index === 0 ? "eager" : "lazy"}
                           />
                         ) : (
                           <div className="flex h-full items-center justify-center text-4xl text-gray-200">🛍️</div>
@@ -423,25 +408,20 @@ export default async function HomePage() {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {TESTIMONIALS.map((t) => (
-                <div key={t.name} className="card-hover rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold text-white"
-                        style={{ backgroundColor: "#f97316" }}
-                      >
-                        {t.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">{t.name}</p>
-                        <p className="text-xs text-gray-400">📍 {t.city}</p>
-                      </div>
+                <div key={t.name} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                  <div className="mb-2 flex items-center gap-2.5">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white"
+                      style={{ backgroundColor: "#f97316" }}
+                    >
+                      {t.name.charAt(0)}
                     </div>
-                    <span className="text-xs font-semibold text-green-600">{t.badge}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-gray-900">{t.name} · <span className="font-normal text-gray-400">{t.city}</span></p>
+                      <p className="text-yellow-400 text-xs leading-none mt-0.5">{"★".repeat(t.rating)}</p>
+                    </div>
+                    <span className="shrink-0 text-[10px] font-semibold text-green-600">{t.badge}</span>
                   </div>
-
-                  <div className="mb-2 text-yellow-400">{"★".repeat(t.rating)}</div>
-
                   <p className="text-sm leading-relaxed text-gray-600">{t.text}</p>
                 </div>
               ))}
