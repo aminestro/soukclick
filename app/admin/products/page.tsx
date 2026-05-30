@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
-import { Search, LayoutGrid, List, Plus } from "lucide-react"
+import { Search, LayoutGrid, List, Plus, Trash2, AlertTriangle } from "lucide-react"
 import { ProductCard } from "@/components/admin/products/ProductCard"
 import { StatusBadge }  from "@/components/admin/StatusBadge"
 import { DataTable, type Column } from "@/components/admin/DataTable"
 import { formatMADShort, calcMargin } from "@/lib/format"
+import { toast } from "sonner"
 import type { ProductStatus, TestingStatus } from "@prisma/client"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,25 +29,25 @@ interface ProductRow {
 }
 
 const STATUSES = [
-  { value: "",         label: "Tous les statuts"  },
-  { value: "ACTIVE",   label: "Actif"             },
-  { value: "DRAFT",    label: "Brouillon"         },
-  { value: "PAUSED",   label: "Pausé"             },
-  { value: "ARCHIVED", label: "Archivé"           },
+  { value: "",         label: "Tous les statuts" },
+  { value: "ACTIVE",   label: "Actif"            },
+  { value: "DRAFT",    label: "Brouillon"        },
+  { value: "PAUSED",   label: "Pausé"            },
+  { value: "ARCHIVED", label: "Archivé"          },
 ]
 
 const TESTING = [
-  { value: "",         label: "Tous les phases"   },
-  { value: "TESTING",  label: "En test"           },
-  { value: "WINNER",   label: "Winner"            },
-  { value: "SCALING",  label: "Scaling"           },
-  { value: "STOPPED",  label: "Arrêté"            },
+  { value: "",         label: "Tous les phases" },
+  { value: "TESTING",  label: "En test"         },
+  { value: "WINNER",   label: "Winner"          },
+  { value: "SCALING",  label: "Scaling"         },
+  { value: "STOPPED",  label: "Arrêté"          },
 ]
 
 const SORTS = [
-  { value: "newest",    label: "Plus récents"       },
-  { value: "stock_asc", label: "Stock (croissant)"  },
-  { value: "price_asc", label: "Prix (croissant)"   },
+  { value: "newest",    label: "Plus récents"      },
+  { value: "stock_asc", label: "Stock (croissant)" },
+  { value: "price_asc", label: "Prix (croissant)"  },
 ]
 
 const TESTING_BADGE: Record<TestingStatus, string> = {
@@ -56,9 +57,70 @@ const TESTING_BADGE: Record<TestingStatus, string> = {
   STOPPED: "bg-gray-100 text-gray-600",
 }
 
+// ─── Delete confirmation modal ────────────────────────────────────────────────
+
+function DeleteModal({
+  productName,
+  onConfirm,
+  onCancel,
+  loading,
+}: {
+  productName: string
+  onConfirm:   () => void
+  onCancel:    () => void
+  loading:     boolean
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !loading && onCancel()} />
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100">
+          <AlertTriangle className="h-6 w-6 text-red-600" />
+        </div>
+        <h2 className="mb-1 text-lg font-bold text-gray-900">Supprimer ce produit ?</h2>
+        <p className="mb-1 text-sm text-gray-500">Vous êtes sur le point de supprimer :</p>
+        <p className="mb-4 rounded-lg bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800 truncate">
+          {productName}
+        </p>
+        <p className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          ⚠️ Cette action est <strong>irréversible</strong>. Le produit et toutes ses données seront définitivement supprimés.
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
+          >
+            {loading ? (
+              <>
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+                Suppression…
+              </>
+            ) : (
+              <><Trash2 className="h-4 w-4" /> Supprimer définitivement</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Table columns (list view) ────────────────────────────────────────────────
 
-function buildColumns(onAction: () => void): Column<ProductRow>[] {
+function buildColumns(onRefresh: () => void): Column<ProductRow>[] {
   return [
     {
       key:    "product",
@@ -92,8 +154,8 @@ function buildColumns(onAction: () => void): Column<ProductRow>[] {
       key:    "margin",
       header: "Marge",
       cell:   (r) => {
-        const m    = calcMargin(r.price, r.costPrice)
-        const cls  = m >= 50 ? "text-green-600" : m >= 30 ? "text-orange-500" : "text-red-600"
+        const m   = calcMargin(r.price, r.costPrice)
+        const cls = m >= 50 ? "text-green-600" : m >= 30 ? "text-orange-500" : "text-red-600"
         return <span className={`font-bold text-sm ${cls}`}>{m.toFixed(1)}%</span>
       },
     },
@@ -121,32 +183,75 @@ function buildColumns(onAction: () => void): Column<ProductRow>[] {
     {
       key:    "orders",
       header: "Cmd/mois",
-      cell:   (r) => (
-        <span className="font-semibold text-gray-700">{r._count.orders}</span>
-      ),
+      cell:   (r) => <span className="font-semibold text-gray-700">{r._count.orders}</span>,
     },
     {
       key:    "actions",
       header: "Actions",
-      cell:   (r) => (
-        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <Link
-            href={`/admin/products/${r.id}/edit`}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-          >
-            Modifier
-          </Link>
-          <Link
-            href={`/${r.slug}`}
-            target="_blank"
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-          >
-            Voir
-          </Link>
-        </div>
-      ),
+      cell:   (r) => <ListRowActions product={r} onRefresh={onRefresh} />,
     },
   ]
+}
+
+// Extracted so it can hold its own modal state without re-rendering the whole table
+function ListRowActions({ product, onRefresh }: { product: ProductRow; onRefresh: () => void }) {
+  const [showModal, setShowModal] = useState(false)
+  const [loading,   setLoading]   = useState(false)
+
+  async function hardDelete() {
+    setLoading(true)
+    try {
+      const res  = await fetch(`/api/admin/products/${product.id}`, { method: "DELETE" })
+      const body = await res.json() as { success?: boolean; error?: string }
+      if (res.ok && body.success) {
+        toast.success("Produit supprimé définitivement")
+        setShowModal(false)
+        onRefresh()
+      } else {
+        toast.error(body.error ?? "Erreur lors de la suppression")
+        setShowModal(false)
+      }
+    } catch {
+      toast.error("Erreur réseau")
+      setShowModal(false)
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+      <Link
+        href={`/admin/products/${product.id}/edit`}
+        className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        Modifier
+      </Link>
+      <Link
+        href={`/${product.slug}`}
+        target="_blank"
+        className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        Voir
+      </Link>
+      <button
+        type="button"
+        onClick={() => setShowModal(true)}
+        className="flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+        title="Supprimer"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+
+      {showModal && (
+        <DeleteModal
+          productName={product.titleFr}
+          loading={loading}
+          onConfirm={hardDelete}
+          onCancel={() => setShowModal(false)}
+        />
+      )}
+    </div>
+  )
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -164,27 +269,33 @@ export default function ProductsPage() {
   const [sort,          setSort]          = useState("newest")
 
   const PAGE_SIZE = 20
-  const columns   = buildColumns(() => fetchProducts(page))
 
   const fetchProducts = useCallback(async (p = 1) => {
     setLoading(true)
-    const qs = new URLSearchParams({
-      page:    String(p),
-      pageSize:String(PAGE_SIZE),
-      sort,
-      ...(search        ? { search }               : {}),
-      ...(statusFilter  ? { status: statusFilter } : {}),
-      ...(testingFilter ? { testingStatus: testingFilter } : {}),
-    })
-    const res  = await fetch(`/api/admin/products?${qs}`)
-    const body = await res.json() as { products: ProductRow[]; total: number }
-    setProducts(body.products ?? [])
-    setTotal(body.total ?? 0)
-    setPage(p)
-    setLoading(false)
-  }, [search, statusFilter, testingFilter, sort, page])
+    try {
+      const qs = new URLSearchParams({
+        page:     String(p),
+        pageSize: String(PAGE_SIZE),
+        sort,
+        ...(search        ? { search }                         : {}),
+        ...(statusFilter  ? { status: statusFilter }           : {}),
+        ...(testingFilter ? { testingStatus: testingFilter }   : {}),
+      })
+      const res  = await fetch(`/api/admin/products?${qs}`)
+      const body = await res.json() as { products: ProductRow[]; total: number }
+      setProducts(body.products ?? [])
+      setTotal(body.total ?? 0)
+      setPage(p)
+    } catch {
+      // ignore network errors — table stays stale
+    } finally {
+      setLoading(false)
+    }
+  }, [search, statusFilter, testingFilter, sort])
 
   useEffect(() => { fetchProducts(1) }, [search, statusFilter, testingFilter, sort])
+
+  const columns = buildColumns(() => fetchProducts(page))
 
   return (
     <div className="space-y-4">
@@ -204,7 +315,6 @@ export default function ProductsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
-        {/* Search */}
         <div className="relative min-w-[180px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -240,7 +350,6 @@ export default function ProductsPage() {
           {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
 
-        {/* View toggle */}
         <div className="ml-auto flex items-center gap-1 rounded-xl border border-gray-200 p-1">
           <button
             onClick={() => setViewMode("grid")}
@@ -289,10 +398,10 @@ export default function ProductsPage() {
                     product={p}
                     onArchived={() => fetchProducts(page)}
                     onDuplicated={() => fetchProducts(page)}
+                    onDeleted={() => fetchProducts(page)}
                   />
                 ))}
               </div>
-              {/* Grid pagination */}
               {total > PAGE_SIZE && (
                 <div className="flex justify-center gap-2 pt-2">
                   <button
