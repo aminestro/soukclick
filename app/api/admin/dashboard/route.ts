@@ -29,6 +29,7 @@ export async function GET() {
     lowStockCount,
     last7Raw,
     recentOrders,
+    statusGroups,
     topProductsRaw,
   ] = await Promise.all([
     // Today totals
@@ -87,6 +88,12 @@ export async function GET() {
         city:         { select: { nameFr: true } },
         product:      { select: { titleFr: true } },
       },
+    }),
+
+    // Status counts (for donut chart)
+    prisma.order.groupBy({
+      by:     ["status"],
+      _count: { id: true },
     }),
 
     // Top products this month
@@ -150,5 +157,8 @@ export async function GET() {
       orders:    Number(r.orders),
       revenue:   Number(r.revenue),
     })),
+    statusCounts: Object.fromEntries(
+      statusGroups.map((g) => [g.status, g._count.id])
+    ),
   })
 }

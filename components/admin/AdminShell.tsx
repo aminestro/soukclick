@@ -8,31 +8,56 @@ import {
   LayoutDashboard, ShoppingCart, Phone, Package,
   FileText, ImageIcon, FlaskConical, TrendingUp, Truck,
   Users, Tag, BarChart2, Bell, Settings, Sparkles,
-  LogOut, Menu, X, ChevronRight,
+  LogOut, ChevronRight, ChevronLeft, Megaphone,
+  Search, Moon, Menu,
 } from "lucide-react"
 import type { AdminRole } from "@prisma/client"
 
 // ─── Nav definition ───────────────────────────────────────────────────────────
 
-const NAV_ITEMS = [
-  { href: "/admin/dashboard",     label: "Dashboard",     icon: LayoutDashboard },
-  { href: "/admin/orders",        label: "Commandes",     icon: ShoppingCart },
-  { href: "/admin/call-center",   label: "Call Center",   icon: Phone },
-  { href: "/admin/products",      label: "Produits",      icon: Package },
-  { href: "/admin/landing-pages", label: "Landing Pages", icon: FileText },
-  { href: "/admin/creatives",     label: "Créatifs",      icon: ImageIcon },
-  { href: "/admin/research",      label: "Recherche",     icon: FlaskConical },
-  { href: "/admin/profit",        label: "Profit",        icon: TrendingUp },
-  { href: "/admin/delivery",      label: "Livraison",     icon: Truck },
-  { href: "/admin/customers",     label: "Clients",       icon: Users },
-  { href: "/admin/offers",        label: "Offres",        icon: Tag },
-  { href: "/admin/ads",           label: "Publicités",    icon: BarChart2 },
-  { href: "/admin/ai-tools",      label: "AI Tools",      icon: Sparkles },
-  { href: "/admin/notifications", label: "Notifications", icon: Bell },
-  { href: "/admin/settings",      label: "Paramètres",    icon: Settings },
+const NAV_GROUPS = [
+  {
+    label: "PRINCIPAL",
+    items: [
+      { href: "/admin/dashboard",   label: "Dashboard",     icon: LayoutDashboard, badge: null      },
+      { href: "/admin/orders",      label: "Commandes",     icon: ShoppingCart,    badge: "orders"  },
+      { href: "/admin/call-center", label: "Call Center",   icon: Phone,           badge: "pending" },
+    ],
+  },
+  {
+    label: "CATALOGUE",
+    items: [
+      { href: "/admin/products",      label: "Produits",      icon: Package,   badge: null },
+      { href: "/admin/landing-pages", label: "Landing Pages", icon: FileText,  badge: null },
+      { href: "/admin/creatives",     label: "Créatifs",      icon: ImageIcon, badge: null },
+    ],
+  },
+  {
+    label: "MARKETING",
+    items: [
+      { href: "/admin/ai-tools", label: "AI Tools",   icon: Sparkles,  badge: "new" },
+      { href: "/admin/ads",      label: "Publicités", icon: Megaphone, badge: null  },
+      { href: "/admin/offers",   label: "Offres",     icon: Tag,       badge: null  },
+    ],
+  },
+  {
+    label: "ANALYSE",
+    items: [
+      { href: "/admin/profit",   label: "Profit",    icon: TrendingUp,   badge: null },
+      { href: "/admin/research", label: "Recherche", icon: FlaskConical, badge: null },
+    ],
+  },
+  {
+    label: "GESTION",
+    items: [
+      { href: "/admin/delivery",      label: "Livraison",     icon: Truck,    badge: null    },
+      { href: "/admin/customers",     label: "Clients",       icon: Users,    badge: null    },
+      { href: "/admin/reviews",       label: "Avis",          icon: BarChart2,badge: null    },
+      { href: "/admin/notifications", label: "Notifications", icon: Bell,     badge: "notif" },
+      { href: "/admin/settings",      label: "Paramètres",    icon: Settings, badge: null    },
+    ],
+  },
 ]
-
-// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface AdminShellProps {
   user:     { id: string; name: string; email: string; role: AdminRole }
@@ -42,193 +67,283 @@ interface AdminShellProps {
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 function Sidebar({
-  open,
-  onClose,
+  collapsed,
+  onToggle,
   unreadCount,
+  pendingCount,
   user,
 }: {
-  open:        boolean
-  onClose:     () => void
-  unreadCount: number
-  user:        AdminShellProps["user"]
+  collapsed:    boolean
+  onToggle:     () => void
+  unreadCount:  number
+  pendingCount: number
+  user:         AdminShellProps["user"]
 }) {
   const pathname = usePathname()
 
+  function isActive(href: string) {
+    return pathname === href || (href !== "/admin/dashboard" && pathname.startsWith(href))
+  }
+
+  function getBadge(badge: string | null): React.ReactNode {
+    if (!badge) return null
+    if (badge === "new") {
+      return (
+        <span className="ml-auto rounded-md bg-orange-500 px-1.5 py-0.5 text-[9px] font-extrabold text-white leading-none tracking-wide">
+          NEW
+        </span>
+      )
+    }
+    const count =
+      badge === "notif"   ? unreadCount :
+      badge === "pending" ? pendingCount :
+      badge === "orders"  ? pendingCount :
+      0
+    if (!count) return null
+    return (
+      <span className="ml-auto flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-bold text-white leading-none">
+        {count > 99 ? "99+" : count}
+      </span>
+    )
+  }
+
   return (
-    <>
-      {/* Mobile backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 z-20 bg-black/50 md:hidden"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Sidebar panel */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-gray-950 transition-transform duration-200 md:translate-x-0 md:static md:z-auto ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-gray-800 px-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500 text-white font-extrabold text-sm">
-              SC
-            </div>
-            <span className="font-bold text-white text-sm">SoukClick</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:text-white md:hidden"
-          >
-            <X className="h-5 w-5" />
+    <aside
+      className="flex h-screen flex-col border-r border-white/[0.06] transition-all duration-300 ease-in-out"
+      style={{ width: collapsed ? 64 : 240, backgroundColor: "#0F0F0F", flexShrink: 0 }}
+    >
+      {/* Logo */}
+      <div className="flex h-14 items-center border-b border-white/[0.06] px-3">
+        {collapsed ? (
+          <button onClick={onToggle} className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500 text-xs font-extrabold text-white shadow-lg shadow-orange-500/20">
+            SC
           </button>
-        </div>
+        ) : (
+          <>
+            <Link href="/admin/dashboard" className="flex flex-1 items-center gap-2.5 min-w-0">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-xs font-extrabold text-white shadow-lg shadow-orange-500/20">
+                SC
+              </div>
+              <div className="min-w-0">
+                <span className="block truncate text-sm font-bold text-white tracking-tight">SoukClick</span>
+                <span className="block text-[10px] text-gray-600 leading-none mt-0.5">Admin Panel</span>
+              </div>
+            </Link>
+            <button
+              onClick={onToggle}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-600 hover:bg-white/8 hover:text-gray-300 transition-colors"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+          </>
+        )}
+      </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-          {NAV_ITEMS.map((item) => {
-            const Icon    = item.icon
-            const active  = pathname === item.href ||
-              (item.href !== "/admin/dashboard" && pathname.startsWith(item.href))
-            const isNotif = item.href === "/admin/notifications"
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2 space-y-5">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label}>
+            {!collapsed && (
+              <p className="mb-1.5 px-2 text-[9px] font-bold tracking-[0.12em] text-gray-700 uppercase">
+                {group.label}
+              </p>
+            )}
+            {collapsed && <div className="my-1 mx-2 h-px bg-white/[0.05]" />}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const Icon   = item.icon
+                const active = isActive(item.href)
+                const badge  = getBadge(item.badge)
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition ${
-                  active
-                    ? "bg-orange-500 text-white"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="font-medium">{item.label}</span>
-                </div>
-                {isNotif && unreadCount > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-                {!isNotif && active && (
-                  <ChevronRight className="h-4 w-4 opacity-60" />
-                )}
-              </Link>
-            )
-          })}
-        </nav>
-
-        {/* User + Logout */}
-        <div className="border-t border-gray-800 p-4">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-700 text-xs font-bold text-white uppercase">
-              {user.name.charAt(0)}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">{user.name}</p>
-              <p className="truncate text-xs text-gray-400">{user.role}</p>
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={collapsed ? item.label : undefined}
+                    className={`group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-150 ${
+                      active
+                        ? "bg-orange-500/[0.12] text-orange-400"
+                        : "text-gray-500 hover:bg-white/[0.05] hover:text-gray-200"
+                    } ${collapsed ? "justify-center px-0" : ""}`}
+                  >
+                    {active && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-0.5 rounded-r-full bg-orange-500" />
+                    )}
+                    <Icon className={`h-[15px] w-[15px] shrink-0 ${active ? "text-orange-400" : ""}`} />
+                    {!collapsed && (
+                      <>
+                        <span className={`flex-1 truncate text-[13px] ${active ? "font-semibold" : "font-medium"}`}>
+                          {item.label}
+                        </span>
+                        {badge}
+                      </>
+                    )}
+                  </Link>
+                )
+              })}
             </div>
           </div>
+        ))}
+      </nav>
+
+      {/* User + logout */}
+      <div className="border-t border-white/[0.06] p-2">
+        {collapsed ? (
           <button
             onClick={() => signOut({ callbackUrl: "/admin/login" })}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-400 transition hover:bg-gray-800 hover:text-red-400"
+            title="Se déconnecter"
+            className="flex w-full items-center justify-center rounded-lg p-2.5 text-gray-600 hover:bg-white/8 hover:text-red-400 transition-colors"
           >
             <LogOut className="h-4 w-4" />
-            Se déconnecter
           </button>
-        </div>
-      </aside>
-    </>
+        ) : (
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-[11px] font-bold text-white uppercase shadow-sm">
+                {user.name.charAt(0)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[12px] font-semibold text-white leading-tight">{user.name}</p>
+                <p className="truncate text-[10px] text-gray-600 leading-tight mt-0.5">{user.role}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: "/admin/login" })}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] text-gray-600 transition-colors hover:bg-white/[0.05] hover:text-red-400"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Se déconnecter
+            </button>
+          </div>
+        )}
+      </div>
+    </aside>
   )
 }
 
 // ─── Shell ────────────────────────────────────────────────────────────────────
 
 export function AdminShell({ user, children }: AdminShellProps) {
-  const [sidebarOpen, setSidebarOpen]   = useState(false)
-  const [unreadCount, setUnreadCount]   = useState(0)
+  const [collapsed,     setCollapsed]     = useState(false)
+  const [mobileSidebar, setMobileSidebar] = useState(false)
+  const [unreadCount,   setUnreadCount]   = useState(0)
+  const [pendingCount,  setPendingCount]  = useState(0)
   const pathname = usePathname()
 
-  // Close sidebar on route change
-  useEffect(() => { setSidebarOpen(false) }, [pathname])
+  useEffect(() => { setMobileSidebar(false) }, [pathname])
 
-  // Poll unread notification count
   useEffect(() => {
-    async function fetchUnread() {
+    async function fetchCounts() {
       try {
-        const res  = await fetch("/api/admin/notifications?unreadOnly=true&limit=0")
-        if (!res.ok) return
-        const body = await res.json() as { unreadCount: number }
-        setUnreadCount(body.unreadCount)
+        const [notifRes, ordersRes] = await Promise.all([
+          fetch("/api/admin/notifications?unreadOnly=true&limit=0"),
+          fetch("/api/admin/orders?status=NOUVEAU&pageSize=0"),
+        ])
+        if (notifRes.ok) {
+          const d = await notifRes.json() as { unreadCount?: number }
+          setUnreadCount(d.unreadCount ?? 0)
+        }
+        if (ordersRes.ok) {
+          const d = await ordersRes.json() as { total?: number }
+          setPendingCount(d.total ?? 0)
+        }
       } catch { /* ignore */ }
     }
-
-    fetchUnread()
-    const interval = setInterval(fetchUnread, 60_000)
-    return () => clearInterval(interval)
+    fetchCounts()
+    const id = setInterval(fetchCounts, 60_000)
+    return () => clearInterval(id)
   }, [])
 
-  // Current page title
-  const currentNav = NAV_ITEMS.find(
-    (n) => pathname === n.href || (n.href !== "/admin/dashboard" && pathname.startsWith(n.href)),
+  const currentItem = NAV_GROUPS.flatMap((g) => g.items).find(
+    (n) => pathname === n.href || (n.href !== "/admin/dashboard" && pathname.startsWith(n.href))
   )
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      <Sidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        unreadCount={unreadCount}
-        user={user}
-      />
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F8F8F8" }}>
+
+      {/* Mobile overlay */}
+      {mobileSidebar && (
+        <div
+          className="fixed inset-0 z-20 bg-black/70 backdrop-blur-sm md:hidden"
+          onClick={() => setMobileSidebar(false)}
+        />
+      )}
+
+      {/* Desktop sidebar */}
+      <div className="hidden md:flex">
+        <Sidebar
+          collapsed={collapsed}
+          onToggle={() => setCollapsed((v) => !v)}
+          unreadCount={unreadCount}
+          pendingCount={pendingCount}
+          user={user}
+        />
+      </div>
+
+      {/* Mobile sidebar */}
+      {mobileSidebar && (
+        <div className="fixed inset-y-0 left-0 z-30 md:hidden">
+          <Sidebar
+            collapsed={false}
+            onToggle={() => setMobileSidebar(false)}
+            unreadCount={unreadCount}
+            pendingCount={pendingCount}
+            user={user}
+          />
+        </div>
+      )}
 
       {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top header */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-6 shadow-sm">
+
+        {/* Top bar */}
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200/80 bg-white px-4 md:px-5">
           <div className="flex items-center gap-3">
-            {/* Hamburger — mobile only */}
             <button
-              onClick={() => setSidebarOpen(true)}
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 md:hidden"
-              aria-label="Ouvrir le menu"
+              onClick={() => setMobileSidebar(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 md:hidden transition-colors"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4.5 w-4.5" />
             </button>
-            <h1 className="text-base font-bold text-gray-900 md:text-lg">
-              {currentNav?.label ?? "Admin"}
-            </h1>
+            <div>
+              <h1 className="text-[13px] font-bold text-gray-900 leading-tight">
+                {currentItem?.label ?? "Admin"}
+              </h1>
+              <p className="hidden text-[11px] text-gray-400 leading-tight md:block">
+                SoukClick · {currentItem?.label ?? "Dashboard"}
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Notification bell */}
+          <div className="flex items-center gap-1">
+            <button className="hidden h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 md:flex transition-colors">
+              <Search className="h-[15px] w-[15px]" />
+            </button>
+            <button className="hidden h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 md:flex transition-colors">
+              <Moon className="h-[15px] w-[15px]" />
+            </button>
             <Link
               href="/admin/notifications"
-              className="relative flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-100"
-              aria-label={`${unreadCount} notifications non lues`}
+              className="relative flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
             >
-              <Bell className="h-5 w-5" />
+              <Bell className="h-[15px] w-[15px]" />
               {unreadCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                <span className="absolute -right-0.5 -top-0.5 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-bold text-white leading-none">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </Link>
-
-            {/* Admin avatar */}
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-sm font-bold text-white uppercase">
+            <div className="ml-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-[11px] font-bold text-white uppercase shadow-sm">
               {user.name.charAt(0)}
             </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {children}
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 md:p-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>
